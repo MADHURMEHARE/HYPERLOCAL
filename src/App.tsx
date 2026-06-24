@@ -4,6 +4,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, useNavigate, useLocation, useParams, Navigate } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
 import LandingPage from './components/LandingPage';
@@ -17,12 +18,23 @@ import AnalyticsDashboard from './components/AnalyticsDashboard';
 import OfficerDashboard from './components/OfficerDashboard';
 import AdminDashboard from './components/AdminDashboard';
 import AiAssistant from './components/AiAssistant';
-import { Shield } from 'lucide-react';
 import { User, Issue, Comment, PredictiveHotspot, LeaderboardEntry, Notification as AppNotification } from './types';
 
+// Root level component that sets up standard react-router-dom context
 export default function App() {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
+  );
+}
+
+// Router-wrapped main application component
+function AppContent() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
-  const [currentView, setCurrentView] = useState<string>('landing');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [selectedIssueId, setSelectedIssueId] = useState<string>('');
   const [prefilledLocation, setPrefilledLocation] = useState<{ lat: number; lng: number; address?: string; ward?: string } | null>(null);
@@ -97,21 +109,44 @@ export default function App() {
     fetchData();
   }, []);
 
-  // Set default view on user authentication change
+  // Set default view on user authentication change, maintaining compatibility for initial loading and deep links
   useEffect(() => {
     if (!currentUser) {
-      setCurrentView('landing');
+      if (location.pathname !== '/' && location.pathname !== '/login') {
+        navigate('/');
+      }
       return;
     }
 
-    if (currentUser.role === 'admin') {
-      setCurrentView('admin-dashboard');
-    } else if (currentUser.role === 'officer') {
-      setCurrentView('officer-dashboard');
-    } else {
-      setCurrentView('citizen-dashboard');
+    // Only auto-redirect to dashboard if the user is on the root index page or login screen
+    if (location.pathname === '/' || location.pathname === '/login') {
+      if (currentUser.role === 'admin') {
+        navigate('/admin-dashboard');
+      } else if (currentUser.role === 'officer') {
+        navigate('/officer-dashboard');
+      } else {
+        navigate('/citizen-dashboard');
+      }
     }
   }, [currentUser]);
+
+  // Derived currentView string to keep Header and Footer highlights fully synchronized
+  const getCurrentViewFromPath = (pathname: string): string => {
+    if (pathname === '/' || pathname === '/landing') return 'landing';
+    if (pathname === '/login') return 'login';
+    if (pathname === '/citizen-dashboard') return 'citizen-dashboard';
+    if (pathname === '/officer-dashboard') return 'officer-dashboard';
+    if (pathname === '/admin-dashboard') return 'admin-dashboard';
+    if (pathname === '/report') return 'report';
+    if (pathname.startsWith('/issue/')) return 'issue-details';
+    if (pathname === '/map') return 'map';
+    if (pathname === '/leaderboard') return 'leaderboard';
+    if (pathname === '/analytics') return 'analytics';
+    if (pathname === '/assistant') return 'assistant';
+    return 'landing';
+  };
+
+  const currentView = getCurrentViewFromPath(location.pathname);
 
   // Dynamic Handlers
   const handleLogin = (user: User, token?: string) => {
@@ -131,6 +166,15 @@ export default function App() {
       createdAt: new Date().toISOString()
     };
     setNotifications(prev => [newNotify, ...prev]);
+
+    // Role-based navigation after logging in
+    if (user.role === 'admin') {
+      navigate('/admin-dashboard');
+    } else if (user.role === 'officer') {
+      navigate('/officer-dashboard');
+    } else {
+      navigate('/citizen-dashboard');
+    }
   };
 
   const handleLogout = () => {
@@ -145,18 +189,29 @@ export default function App() {
         if (el) {
           el.scrollIntoView({ behavior: 'smooth' });
         }
-        setCurrentView('landing');
+        navigate('/');
         return;
       }
     }
     if (typeof issueIdOrLocation === 'string') {
       setSelectedIssueId(issueIdOrLocation);
+      navigate(`/issue/${issueIdOrLocation}`);
     } else if (issueIdOrLocation && typeof issueIdOrLocation === 'object') {
       setPrefilledLocation(issueIdOrLocation);
-    } else if (view !== 'report') {
+      navigate('/report');
+    } else {
       setPrefilledLocation(null);
+      if (view === 'landing') navigate('/');
+      else if (view === 'login') navigate('/login');
+      else if (view === 'citizen-dashboard') navigate('/citizen-dashboard');
+      else if (view === 'officer-dashboard') navigate('/officer-dashboard');
+      else if (view === 'admin-dashboard') navigate('/admin-dashboard');
+      else if (view === 'report') navigate('/report');
+      else if (view === 'map') navigate('/map');
+      else if (view === 'leaderboard') navigate('/leaderboard');
+      else if (view === 'analytics') navigate('/analytics');
+      else if (view === 'assistant') navigate('/assistant');
     }
-    setCurrentView(view);
   };
 
   const handleReportIssue = async (newIssue: Partial<Issue>) => {
@@ -229,7 +284,7 @@ export default function App() {
         };
         setNotifications(prev => [newNotif, ...prev]);
 
-        setCurrentView('citizen-dashboard');
+        navigate('/citizen-dashboard');
       } else {
         alert('Server processing error. Simulating offline log.');
       }
@@ -250,7 +305,7 @@ export default function App() {
       setCurrentUser(updatedUser);
       setUsersList(prev => prev.map(u => u.id === currentUser.id ? updatedUser : u));
 
-      setCurrentView('citizen-dashboard');
+      navigate('/citizen-dashboard');
     }
   };
 
@@ -472,23 +527,34 @@ export default function App() {
 
       {/* Primary Layout Router Switch */}
       <main className="flex-1 shrink-0">
-        {!currentUser ? (
-          <LandingPage 
-            onNavigate={handleNavigate} 
-            user={null} 
-            onLoginSuccess={handleLogin} 
-          />
-        ) : (
-          <>
-            {currentView === 'landing' && (
-              <LandingPage onNavigate={handleNavigate} user={currentUser} />
-            )}
+        <Routes>
+          {/* Landing / Homepage Route */}
+          <Route path="/" element={
+            <LandingPage 
+              onNavigate={handleNavigate} 
+              user={currentUser} 
+              onLoginSuccess={handleLogin} 
+            />
+          } />
 
-            {currentView === 'login' && (
+          {/* Login / Signup Route */}
+          <Route path="/login" element={
+            currentUser ? (
+              <Navigate to={
+                currentUser.role === 'admin' 
+                  ? '/admin-dashboard' 
+                  : currentUser.role === 'officer' 
+                    ? '/officer-dashboard' 
+                    : '/citizen-dashboard'
+              } replace />
+            ) : (
               <LoginRegister onLoginSuccess={handleLogin} />
-            )}
+            )
+          } />
 
-            {currentView === 'citizen-dashboard' && currentUser && (
+          {/* Citizen Dashboard */}
+          <Route path="/citizen-dashboard" element={
+            currentUser ? (
               <CitizenDashboard
                 user={currentUser}
                 issues={issues}
@@ -496,44 +562,41 @@ export default function App() {
                 onNavigate={handleNavigate}
                 onClearNotifications={() => setNotifications([])}
               />
-            )}
+            ) : (
+              <Navigate to="/" replace />
+            )
+          } />
 
-            {currentView === 'report' && (
+          {/* Report an Issue */}
+          <Route path="/report" element={
+            currentUser ? (
               <ReportIssue
                 userId={currentUser.id}
                 userName={currentUser.name}
                 userAvatar={currentUser.avatar}
                 prefilledLocation={prefilledLocation}
-                onIssueCreated={async () => {
-                  try {
-                    const res = await fetch('/api/issues');
-                    if (res.ok) setIssues(await res.json());
-                    const usersRes = await fetch('/api/users');
-                    if (usersRes.ok) setUsersList(await usersRes.json());
-                    const leaderRes = await fetch('/api/leaderboard');
-                    if (leaderRes.ok) setLeaderboard(await leaderRes.json());
-                  } catch (e) {
-                    console.error(e);
-                  }
-                  handleNavigate('citizen-dashboard');
-                }}
+                onIssueCreated={handleReportIssue}
                 onNavigate={handleNavigate}
               />
-            )}
+            ) : (
+              <Navigate to="/" replace />
+            )
+          } />
 
-            {currentView === 'issue-details' && currentUser && (
-              <IssueDetails
+          {/* Detailed Issue Page */}
+          <Route path="/issue/:id" element={
+            currentUser ? (
+              <IssueDetailsRouteWrapper
                 user={currentUser}
-                issueId={selectedIssueId}
                 issues={issues}
                 comments={comments}
                 onBack={() => {
                   if (currentUser.role === 'admin') {
-                    handleNavigate('admin-dashboard');
+                    navigate('/admin-dashboard');
                   } else if (currentUser.role === 'officer') {
-                    handleNavigate('officer-dashboard');
+                    navigate('/officer-dashboard');
                   } else {
-                    handleNavigate('citizen-dashboard');
+                    navigate('/citizen-dashboard');
                   }
                 }}
                 onVote={handleVote}
@@ -541,37 +604,67 @@ export default function App() {
                 onAddComment={handleAddComment}
                 onUpdateStatus={handleUpdateStatus}
               />
-            )}
+            ) : (
+              <Navigate to="/" replace />
+            )
+          } />
 
-            {currentView === 'map' && (
+          {/* Interactive Map */}
+          <Route path="/map" element={
+            currentUser ? (
               <InteractiveMap
                 issues={issues}
                 predictions={predictions}
                 onNavigate={handleNavigate}
               />
-            )}
+            ) : (
+              <Navigate to="/" replace />
+            )
+          } />
 
-            {currentView === 'leaderboard' && (
+          {/* Leaderboard & Badges */}
+          <Route path="/leaderboard" element={
+            currentUser ? (
               <Leaderboard entries={leaderboard} />
-            )}
+            ) : (
+              <Navigate to="/" replace />
+            )
+          } />
 
-            {currentView === 'analytics' && (
+          {/* Analytics Dashboard */}
+          <Route path="/analytics" element={
+            currentUser ? (
               <AnalyticsDashboard issues={issues} />
-            )}
+            ) : (
+              <Navigate to="/" replace />
+            )
+          } />
 
-            {currentView === 'assistant' && (
+          {/* AI Assistant Chatbot */}
+          <Route path="/assistant" element={
+            currentUser ? (
               <AiAssistant userId={currentUser?.id} />
-            )}
+            ) : (
+              <Navigate to="/" replace />
+            )
+          } />
 
-            {currentView === 'officer-dashboard' && currentUser && (
+          {/* Officer Dashboard */}
+          <Route path="/officer-dashboard" element={
+            currentUser ? (
               <OfficerDashboard
                 user={currentUser}
                 issues={issues}
                 onNavigate={handleNavigate}
               />
-            )}
+            ) : (
+              <Navigate to="/" replace />
+            )
+          } />
 
-            {currentView === 'admin-dashboard' && currentUser && (
+          {/* Administrator Panel */}
+          <Route path="/admin-dashboard" element={
+            currentUser ? (
               <AdminDashboard
                 user={currentUser}
                 issues={issues}
@@ -580,14 +673,57 @@ export default function App() {
                 onModerateIssue={handleModerateIssue}
                 onModifyRole={handleModifyRole}
               />
-            )}
-          </>
-        )}
+            ) : (
+              <Navigate to="/" replace />
+            )
+          } />
+
+          {/* Wildcard / Fallback Redirect */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
       </main>
 
       {/* Footer - Always visible */}
       <Footer onNavigate={handleNavigate} currentUser={currentUser} />
 
     </div>
+  );
+}
+
+interface IssueDetailsRouteWrapperProps {
+  user: User;
+  issues: Issue[];
+  comments: Comment[];
+  onBack: () => void;
+  onVote: (issueId: string) => Promise<void>;
+  onVerify: (issueId: string) => Promise<void>;
+  onAddComment: (issueId: string, content: string, photo?: string) => Promise<void>;
+  onUpdateStatus: (issueId: string, payload: any) => Promise<void>;
+}
+
+// Wrapper component to grab the dynamic issue ID parameter from the URL path
+function IssueDetailsRouteWrapper({
+  user,
+  issues,
+  comments,
+  onBack,
+  onVote,
+  onVerify,
+  onAddComment,
+  onUpdateStatus
+}: IssueDetailsRouteWrapperProps) {
+  const { id } = useParams<{ id: string }>();
+  return (
+    <IssueDetails
+      user={user}
+      issueId={id || ''}
+      issues={issues}
+      comments={comments}
+      onBack={onBack}
+      onVote={onVote}
+      onVerify={onVerify}
+      onAddComment={onAddComment}
+      onUpdateStatus={onUpdateStatus}
+    />
   );
 }
