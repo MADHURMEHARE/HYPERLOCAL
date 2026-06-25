@@ -24,7 +24,8 @@ import {
   Trophy,
   BarChart3,
   Bot,
-  Search
+  Search,
+  Briefcase
 } from 'lucide-react';
 import { User, Notification } from '../types';
 
@@ -108,14 +109,15 @@ export default function Header({
   };
 
   const menuItems = [
-    { label: 'Explore Map', view: 'map', icon: Map, roles: ['citizen', 'officer', 'admin'] },
+    { label: 'Explore Map', view: 'map', icon: Map, roles: ['citizen', 'officer', 'admin', 'vendor'] },
     { label: 'Report Issue', view: 'report', icon: PlusCircle, roles: ['citizen'] },
     { label: 'Citizen Portal', view: 'citizen-dashboard', icon: LayoutDashboard, roles: ['citizen'] },
     { label: 'Officer Desk', view: 'officer-dashboard', icon: Shield, roles: ['officer'] },
+    { label: 'Vendor Workspace', view: 'vendor-dashboard', icon: Briefcase, roles: ['vendor'] },
     { label: 'Admin Panel', view: 'admin-dashboard', icon: Shield, roles: ['admin'] },
-    { label: 'Leaderboard', view: 'leaderboard', icon: Trophy, roles: ['citizen', 'officer', 'admin'] },
-    { label: 'Analytics', view: 'analytics', icon: BarChart3, roles: ['citizen', 'officer', 'admin'] },
-    { label: 'AI Assistant', view: 'assistant', icon: Bot, roles: ['citizen', 'officer', 'admin'] },
+    { label: 'Leaderboard', view: 'leaderboard', icon: Trophy, roles: ['citizen', 'officer', 'admin', 'vendor'] },
+    { label: 'Analytics', view: 'analytics', icon: BarChart3, roles: ['citizen', 'officer', 'admin', 'vendor'] },
+    { label: 'AI Assistant', view: 'assistant', icon: Bot, roles: ['citizen', 'officer', 'admin', 'vendor'] },
   ];
 
   const visibleMenuItems = user 
@@ -332,7 +334,15 @@ export default function Header({
                     <button
                       onClick={() => {
                         setShowUserDropdown(false);
-                        onNavigate(user.role === 'citizen' ? 'citizen-dashboard' : user.role === 'officer' ? 'officer-dashboard' : 'admin-dashboard');
+                        onNavigate(
+                          user.role === 'citizen' 
+                            ? 'citizen-dashboard' 
+                            : user.role === 'officer' 
+                              ? 'officer-dashboard' 
+                              : user.role === 'vendor' 
+                                ? 'vendor-dashboard' 
+                                : 'admin-dashboard'
+                        );
                       }}
                       className="flex w-full items-center rounded-xl px-3 py-2 text-xs font-bold text-slate-700 hover:bg-slate-50 dark:text-slate-300 dark:hover:bg-slate-850/60 cursor-pointer"
                     >

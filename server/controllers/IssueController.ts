@@ -109,7 +109,7 @@ export class IssueController {
   }
 
   static updateStatus(req: Request, res: Response) {
-    const { status, note, officerId, officerName, costEstimate, resolutionTimeline, photoUrl } = req.body;
+    const { status, note, officerId, officerName, costEstimate, resolutionTimeline, photoUrl, vendorId, vendorName, allotmentType } = req.body;
     if (!status) {
       return res.status(400).json({ error: 'Status is required.' });
     }
@@ -121,7 +121,10 @@ export class IssueController {
       officerName,
       costEstimate,
       resolutionTimeline,
-      photoUrl
+      photoUrl,
+      vendorId,
+      vendorName,
+      allotmentType
     });
 
     if (!updated) {

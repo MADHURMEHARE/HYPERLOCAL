@@ -3,9 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
-  Map, 
+  Map as MapIcon, 
   Search, 
   Sparkles, 
   ChevronRight, 
@@ -18,6 +18,9 @@ import {
   PlusCircle,
   AlertTriangle
 } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, Popup, useMap, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { Issue, PredictiveHotspot } from '../types';
 
 interface InteractiveMapProps {
@@ -26,30 +29,122 @@ interface InteractiveMapProps {
   onNavigate: (view: string, issueIdOrData?: any) => void;
 }
 
+// Controller component to programmatically pan and zoom the map smoothly
+function MapController({ center, zoom }: { center: [number, number]; zoom: number }) {
+  const map = useMap();
+
+  useEffect(() => {
+    map.setView(center, zoom, { animate: true });
+  }, [map, center, zoom]);
+
+  return null;
+}
+
+// Map event listener to handle map click events
+function MapEvents({ onMapClick }: { onMapClick: (lat: number, lng: number) => void }) {
+  useMapEvents({
+    click(e) {
+      onMapClick(e.latlng.lat, e.latlng.lng);
+    }
+  });
+  return null;
+}
+
+// Custom Leaflet Markers utilizing inline dynamic SVGs with Tailwind classes
+const createIssueIcon = (status: string) => {
+  let color = '#EF4444'; // Red = Reported (default)
+  if (status === 'Resolved') {
+    color = '#10B981'; // Green = Resolved
+  } else if (status === 'In Progress' || status === 'Assigned') {
+    color = '#2563EB'; // Blue = In Progress
+  } else if (status === 'Verified') {
+    color = '#8B5CF6'; // Purple = Verified
+  }
+
+  return L.divIcon({
+    html: `
+      <div class="relative flex items-center justify-center cursor-pointer" style="width: 32px; height: 32px;">
+        <svg class="h-8 w-8 drop-shadow-md" style="color: ${color}; fill: ${color}20;" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path>
+          <circle cx="12" cy="10" r="3" fill="${color}"></circle>
+        </svg>
+        <span class="absolute top-2 h-1.5 w-1.5 rounded-full animate-ping pointer-events-none" style="background-color: ${color};"></span>
+      </div>
+    `,
+    className: 'custom-leaflet-issue-icon',
+    iconSize: [32, 32],
+    iconAnchor: [16, 32],
+    popupAnchor: [0, -32]
+  });
+};
+
+const createHotspotIcon = () => {
+  return L.divIcon({
+    html: `
+      <div class="flex h-6 w-6 items-center justify-center rounded-full bg-purple-600 text-white shadow-lg border border-white dark:border-slate-950 shadow-purple-500/40 hover:scale-110 transition-transform cursor-pointer">
+        <svg class="h-3.5 w-3.5 animate-pulse" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+        </svg>
+      </div>
+    `,
+    className: 'custom-leaflet-hotspot-icon',
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+    popupAnchor: [0, -12]
+  });
+};
+
+const createDroppedPinIcon = () => {
+  return L.divIcon({
+    html: `
+      <div class="relative cursor-pointer" style="width: 40px; height: 40px;">
+        <svg class="h-10 w-10 text-pink-600 fill-pink-600/20 drop-shadow-xl animate-bounce" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path>
+          <circle cx="12" cy="10" r="3" fill="currentColor"></circle>
+        </svg>
+        <span class="absolute top-3 left-3.5 h-3 w-3 rounded-full bg-pink-500 animate-ping pointer-events-none"></span>
+      </div>
+    `,
+    className: 'custom-leaflet-dropped-icon',
+    iconSize: [40, 40],
+    iconAnchor: [20, 40],
+    popupAnchor: [0, -40]
+  });
+};
+
 export default function InteractiveMap({ issues, predictions, onNavigate }: InteractiveMapProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   
-  // Interactive Pan and Zoom State
-  const [zoom, setZoom] = useState<number>(1);
-  const [pan, setPan] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-  const [isDragging, setIsDragging] = useState<boolean>(false);
-  const [dragStart, setDragStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-  const [mouseDownPos, setMouseDownPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-  const [dragDistance, setDragDistance] = useState<number>(0);
-  const [touchStart, setTouchStart] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  // Map Center and Zoom States
+  const [mapCenter, setMapCenter] = useState<[number, number]>([37.7749, -122.4194]);
+  const [mapZoom, setMapZoom] = useState<number>(12);
 
   // Map layer toggles
   const [showHeatmap, setShowHeatmap] = useState(false);
   
   // Selection States
-  const [hoveredIssue, setHoveredIssue] = useState<Issue | null>(null);
   const [selectedIssue, setSelectedIssue] = useState<Issue | null>(null);
   const [selectedHotspot, setSelectedHotspot] = useState<PredictiveHotspot | null>(null);
   const [droppedPin, setDroppedPin] = useState<{ lat: number; lng: number; address: string; ward: string } | null>(null);
 
-  const mapViewportRef = useRef<HTMLDivElement>(null);
+  // Center on user's current GPS location on mount
+  useEffect(() => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          setMapCenter([latitude, longitude]);
+          setMapZoom(13);
+        },
+        (error) => {
+          console.warn('Geolocation denied or failed. Defaulting to San Francisco standard view.', error);
+        },
+        { enableHighAccuracy: true, timeout: 5000 }
+      );
+    }
+  }, []);
 
   // Filters
   const filteredIssues = issues.filter(i => {
@@ -63,11 +158,11 @@ export default function InteractiveMap({ issues, predictions, onNavigate }: Inte
 
   const getStatusColorHex = (status: string) => {
     switch (status) {
-      case 'Resolved': return '#10B981'; // emerald-500
-      case 'In Progress': return '#2563EB'; // blue-600
-      case 'Assigned': return '#F59E0B'; // amber-500
+      case 'Resolved': return '#10B981'; // emerald-500 (Green)
+      case 'In Progress': return '#2563EB'; // blue-600 (Blue)
+      case 'Assigned': return '#2563EB'; // blue-500
       case 'Verified': return '#8B5CF6'; // purple-500
-      default: return '#EF4444'; // rose-500
+      default: return '#EF4444'; // rose-500 (Red)
     }
   };
 
@@ -87,148 +182,17 @@ export default function InteractiveMap({ issues, predictions, onNavigate }: Inte
 
   // Center the map on specific latitude & longitude
   const centerOnCoordinate = (lat: number, lng: number) => {
-    const container = mapViewportRef.current;
-    if (container) {
-      const rect = container.getBoundingClientRect();
-      const targetZoom = 2; // Nice level of zoom focus
-      
-      const leftPct = ((lng + 122.45) / 0.05); // 0 to 1
-      const topPct = (1 - (lat - 37.75) / 0.04); // 0 to 1
-      
-      const targetX = rect.width / 2 - leftPct * rect.width * targetZoom;
-      const targetY = rect.height / 2 - topPct * rect.height * targetZoom;
-      
-      const maxPanX = rect.width * (targetZoom - 1);
-      const maxPanY = rect.height * (targetZoom - 1);
-      
-      setZoom(targetZoom);
-      setPan({
-        x: Math.min(0, Math.max(-maxPanX, targetX)),
-        y: Math.min(0, Math.max(-maxPanY, targetY))
-      });
-    }
+    setMapCenter([lat, lng]);
+    setMapZoom(15);
   };
 
-  // Drag handlers for Desktop Mouse
-  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
-    // Only drag with left mouse click
-    if (e.button !== 0) return;
-    setIsDragging(true);
-    setDragStart({ x: e.clientX - pan.x, y: e.clientY - pan.y });
-    setMouseDownPos({ x: e.clientX, y: e.clientY });
-    setDragDistance(0);
-  };
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isDragging) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const dx = e.clientX - dragStart.x;
-    const dy = e.clientY - dragStart.y;
-    
-    // Bounds depend on the active zoom level
-    const maxPanX = rect.width * (zoom - 1);
-    const maxPanY = rect.height * (zoom - 1);
-    
-    // Allow panning within bounded scale
-    const boundedX = Math.min(0, Math.max(-maxPanX, dx));
-    const boundedY = Math.min(0, Math.max(-maxPanY, dy));
-    
-    setPan({ x: boundedX, y: boundedY });
-    
-    const dist = Math.sqrt(Math.pow(e.clientX - mouseDownPos.x, 2) + Math.pow(e.clientY - mouseDownPos.y, 2));
-    setDragDistance(dist);
-  };
-
-  const handleMouseUp = (e: React.MouseEvent<HTMLDivElement>) => {
-    setIsDragging(false);
-    if (dragDistance < 5) {
-      handleMapBackgroundClick(e);
-    }
-  };
-
-  // Drag handlers for Mobile Touch Screen
-  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (e.touches.length !== 1) return;
-    setIsDragging(true);
-    const touch = e.touches[0];
-    setDragStart({ x: touch.clientX - pan.x, y: touch.clientY - pan.y });
-    setMouseDownPos({ x: touch.clientX, y: touch.clientY });
-    setDragDistance(0);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
-    if (!isDragging || e.touches.length !== 1) return;
-    const touch = e.touches[0];
-    const rect = e.currentTarget.getBoundingClientRect();
-    const dx = touch.clientX - dragStart.x;
-    const dy = touch.clientY - dragStart.y;
-    
-    const maxPanX = rect.width * (zoom - 1);
-    const maxPanY = rect.height * (zoom - 1);
-    
-    const boundedX = Math.min(0, Math.max(-maxPanX, dx));
-    const boundedY = Math.min(0, Math.max(-maxPanY, dy));
-    
-    setPan({ x: boundedX, y: boundedY });
-    
-    const dist = Math.sqrt(Math.pow(touch.clientX - mouseDownPos.x, 2) + Math.pow(touch.clientY - mouseDownPos.y, 2));
-    setDragDistance(dist);
-  };
-
-  const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>) => {
-    setIsDragging(false);
-    if (dragDistance < 5 && e.changedTouches.length === 1) {
-      const touch = e.changedTouches[0];
-      const fakeMouseEvent = {
-        clientX: touch.clientX,
-        clientY: touch.clientY,
-        currentTarget: e.currentTarget,
-        target: e.target
-      } as unknown as React.MouseEvent<HTMLDivElement>;
-      handleMapBackgroundClick(fakeMouseEvent);
-    }
-  };
-
-  // Click on map empty background to drop a pin
-  const handleMapBackgroundClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    const target = e.target as HTMLElement;
-    // Don't register empty click if we are clicking on pins, buttons or text overlays
-    if (target.closest('.map-pin-marker') || target.closest('button')) {
-      return;
-    }
-
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
-    // Reverse zoom and pan calculation to obtain unscaled coordinate percentages
-    const x_unscaled = (x - pan.x) / zoom;
-    const y_unscaled = (y - pan.y) / zoom;
-    
-    const normX = x_unscaled / rect.width;
-    const normY = y_unscaled / rect.height;
-    
-    // Clamp to [0, 1] range
-    const clampedX = Math.max(0, Math.min(1, normX));
-    const clampedY = Math.max(0, Math.min(1, normY));
-    
-    const calculatedLat = 37.75 + (1 - clampedY) * 0.04;
-    const calculatedLng = -122.45 + clampedX * 0.05;
-
-    // Simulate localized addresses
-    const streets = ['Valencia St', 'Mission St', 'Oak Crescent', 'Dolores St', 'Harrison St', 'Folsom St', 'Market St', 'Castro St'];
-    const blocks = Math.floor(clampedX * 900) + 100;
-    const selectedStreet = streets[Math.floor(clampedY * streets.length)];
-    const generatedAddr = `${blocks} ${selectedStreet}, San Francisco, CA`;
-
-    const wards = ['Ward 3 - Mission', 'Ward 5 - Heights', 'Ward 2 - Castro', 'Ward 4 - Noe'];
-    const generatedWard = wards[Math.floor(clampedX * wards.length)];
-
+  // Map Click handler to drop a pin on coordinates
+  const handleMapClick = (lat: number, lng: number) => {
     setSelectedIssue(null);
     setSelectedHotspot(null);
     setDroppedPin({
-      lat: calculatedLat,
-      lng: calculatedLng,
+      lat,
+      lng,
       address: 'Resolving address...',
       ward: 'Resolving ward...'
     });
@@ -237,30 +201,31 @@ export default function InteractiveMap({ issues, predictions, onNavigate }: Inte
     fetch('/api/ai/reverse-geocode', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ lat: calculatedLat, lng: calculatedLng })
+      body: JSON.stringify({ lat, lng })
     })
       .then(res => res.json())
       .then(data => {
         if (data && data.address) {
           setDroppedPin({
-            lat: calculatedLat,
-            lng: calculatedLng,
+            lat,
+            lng,
             address: data.address,
             ward: data.ward || 'Ward 3 - Mission'
           });
+        } else {
+          throw new Error('Geocoding response structure incomplete');
         }
       })
       .catch(err => {
         console.error('Dynamic geocoding error, falling back:', err);
         const streets = ['Valencia St', 'Mission St', 'Oak Crescent', 'Dolores St', 'Harrison St', 'Folsom St', 'Market St', 'Castro St'];
-        const blocks = Math.floor(clampedX * 900) + 100;
-        const selectedStreet = streets[Math.floor(clampedY * streets.length)];
-        const generatedAddr = `${blocks} ${selectedStreet}, San Francisco, CA`;
+        const randomStreet = streets[Math.floor(Math.abs(lat * 100) % streets.length)];
+        const generatedAddr = `${Math.floor(Math.abs(lng * 1000) % 900) + 100} ${randomStreet}, San Francisco, CA`;
         const wards = ['Ward 3 - Mission', 'Ward 5 - Heights', 'Ward 2 - Castro', 'Ward 4 - Noe'];
-        const generatedWard = wards[Math.floor(clampedX * wards.length)];
+        const generatedWard = wards[Math.floor(Math.abs(lng * 1000) % wards.length)];
         setDroppedPin({
-          lat: calculatedLat,
-          lng: calculatedLng,
+          lat,
+          lng,
           address: generatedAddr,
           ward: generatedWard
         });
@@ -274,7 +239,7 @@ export default function InteractiveMap({ issues, predictions, onNavigate }: Inte
       <div className="flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-850 pb-5">
         <div className="space-y-1">
           <div className="inline-flex items-center space-x-1.5 text-blue-600 dark:text-blue-400 font-mono text-[10px] uppercase font-bold tracking-wider">
-            <Map className="h-3.5 w-3.5 animate-pulse" />
+            <MapIcon className="h-3.5 w-3.5 animate-pulse" />
             <span>Interactive GIS Console</span>
           </div>
           <h1 className="font-display text-2.5xl font-extrabold tracking-tight text-slate-950 dark:text-white">
@@ -326,169 +291,105 @@ export default function InteractiveMap({ issues, predictions, onNavigate }: Inte
       {/* Main Map Layout Split */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
         
-        {/* Left Hand: GIS Map Container */}
+        {/* Left Hand: GIS Leaflet Map Container */}
         <div className="lg:col-span-8 flex flex-col space-y-4">
-          <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-sm relative min-h-[500px] flex-1 flex flex-col">
+          <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 overflow-hidden shadow-sm relative min-h-[500px] flex-1 flex flex-col z-0">
             
-            {/* GIS SVG Visual grid map wrapper (Outer container tracks dragging) */}
-            <div 
-              ref={mapViewportRef}
-              className="absolute inset-0 bg-slate-100 dark:bg-slate-950 transition-colors duration-300 select-none overflow-hidden gis-map-viewport"
-              style={{ cursor: isDragging ? 'grabbing' : 'grab' }}
-              onMouseDown={handleMouseDown}
-              onMouseMove={handleMouseMove}
-              onMouseUp={handleMouseUp}
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
-            >
-              {/* Inner container scales & translates on zoom/pan */}
-              <div
-                className="absolute inset-0 select-none origin-top-left"
-                style={{ 
-                  transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
-                  transition: isDragging ? 'none' : 'transform 0.2s cubic-bezier(0.16, 1, 0.3, 1)'
-                }}
+            <div className="absolute inset-0 overflow-hidden" style={{ minHeight: '500px' }}>
+              <MapContainer
+                center={mapCenter}
+                zoom={mapZoom}
+                zoomControl={false}
+                style={{ width: '100%', height: '100%', minHeight: '500px' }}
               >
-                {/* Simulated Map Background - roads and grid */}
-                <svg className="absolute inset-0 h-full w-full opacity-35 dark:opacity-20 pointer-events-none" xmlns="http://www.w3.org/2000/svg">
-                  <defs>
-                    <pattern id="grid" width="60" height="60" patternUnits="userSpaceOnUse">
-                      <path d="M 60 0 L 0 0 0 60" fill="none" stroke="currentColor" strokeWidth="1.5" strokeDasharray="1 3" />
-                    </pattern>
-                  </defs>
-                  <rect width="100%" height="100%" fill="url(#grid)" />
-                  
-                  {/* Simulated Highways */}
-                  <path d="M 0 100 Q 300 120 800 350" fill="none" stroke="currentColor" strokeWidth="24" className="text-slate-300 dark:text-slate-800" />
-                  <path d="M 120 0 Q 320 400 380 600" fill="none" stroke="currentColor" strokeWidth="18" className="text-slate-300 dark:text-slate-800" />
-                  <path d="M 0 450 C 350 480 500 200 800 150" fill="none" stroke="currentColor" strokeWidth="16" className="text-slate-300 dark:text-slate-800" />
-                </svg>
+                {/* Custom tiles from OpenStreetMap */}
+                <TileLayer
+                  url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                  attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                />
 
-                {/* Park and water blocks */}
-                <div className="absolute top-12 left-28 h-28 w-44 rounded-full bg-emerald-500/8 dark:bg-emerald-500/4 blur-lg pointer-events-none" />
-                <div className="absolute bottom-16 right-12 h-32 w-32 rounded-3xl bg-blue-500/8 dark:bg-blue-500/4 blur-lg pointer-events-none" />
+                {/* Navigation and state sync map controls */}
+                <MapController center={mapCenter} zoom={mapZoom} />
+                <MapEvents onMapClick={handleMapClick} />
 
-                {/* Heatmap Layer Overlays */}
-                {showHeatmap && (
-                  <div className="absolute inset-0 pointer-events-none transition-opacity duration-500 bg-orange-500/5 dark:bg-orange-500/2">
-                    {predictions.map((p, idx) => (
-                      <div
-                        key={idx}
-                        className="absolute -translate-x-1/2 -translate-y-1/2 rounded-full bg-radial from-orange-500/50 via-amber-500/10 to-transparent blur-md animate-pulse"
-                        style={{
-                          left: `${((p.lng + 122.45) / 0.05) * 100}%`,
-                          top: `${(1 - (p.lat - 37.75) / 0.04) * 100}%`,
-                          width: `${p.historicalIncidents * 18}px`,
-                          height: `${p.historicalIncidents * 18}px`,
-                        }}
-                      />
-                    ))}
-                  </div>
-                )}
-
-                {/* GIS Markers Overlay */}
-                <div className="absolute inset-0 pointer-events-auto">
-                  {/* Active Reported Issues Pins */}
-                  {filteredIssues.map((issue) => {
-                    const leftPct = ((issue.location.lng + 122.45) / 0.05) * 100;
-                    const topPct = (1 - (issue.location.lat - 37.75) / 0.04) * 100;
-                    const pinColor = getStatusColorHex(issue.status);
-                    
-                    return (
-                      <div
-                        key={issue.id}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleMapPinClick(issue);
-                        }}
-                        onMouseEnter={() => setHoveredIssue(issue)}
-                        onMouseLeave={() => setHoveredIssue(null)}
-                        className="absolute -translate-x-1/2 -translate-y-full cursor-pointer transition-transform duration-200 hover:scale-120 group z-10 map-pin-marker"
-                        style={{ left: `${leftPct}%`, top: `${topPct}%` }}
-                      >
-                        <MapPin 
-                          className="h-7 w-7 drop-shadow-md" 
-                          style={{ color: pinColor, fill: `${pinColor}25` }}
-                        />
-                        {/* Interactive ring pulse */}
-                        <span 
-                          className="absolute top-2.5 left-2.5 h-2 w-2 rounded-full animate-ping pointer-events-none"
-                          style={{ backgroundColor: pinColor }}
-                        />
-                      </div>
-                    );
-                  })}
-
-                  {/* AI Predictive Hotspots Pins (glowing purple icons) */}
-                  {showHeatmap && predictions.map((p) => {
-                    const leftPct = ((p.lng + 122.45) / 0.05) * 100;
-                    const topPct = (1 - (p.lat - 37.75) / 0.04) * 100;
-
-                    return (
-                      <div
-                        key={p.id}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleHotspotClick(p);
-                        }}
-                        className="absolute -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-transform duration-200 hover:scale-120 z-10 map-pin-marker"
-                        style={{ left: `${leftPct}%`, top: `${topPct}%` }}
-                      >
-                        <div className="flex h-6 w-6 items-center justify-center rounded-full bg-purple-600 text-white shadow-lg border-2 border-white dark:border-slate-900 shadow-purple-500/30">
-                          <Sparkles className="h-3 w-3 animate-pulse" />
-                        </div>
-                      </div>
-                    );
-                  })}
-
-                  {/* Bouncing neon Pink custom dropped pin */}
-                  {droppedPin && (
-                    <div
-                      className="absolute -translate-x-1/2 -translate-y-full cursor-pointer z-20 map-pin-marker"
-                      style={{ 
-                        left: `${((droppedPin.lng + 122.45) / 0.05) * 100}%`, 
-                        top: `${(1 - (droppedPin.lat - 37.75) / 0.04) * 100}%` 
+                {/* Active Reported Issues Pins */}
+                {filteredIssues.map((issue) => {
+                  return (
+                    <Marker
+                      key={issue.id}
+                      position={[issue.location.lat, issue.location.lng]}
+                      icon={createIssueIcon(issue.status)}
+                      eventHandlers={{
+                        click: () => handleMapPinClick(issue)
                       }}
                     >
-                      <MapPin className="h-8 w-8 text-pink-600 fill-pink-600/35 drop-shadow-xl animate-bounce" />
-                      <span className="absolute top-2.5 left-3 h-2.5 w-2.5 rounded-full bg-pink-500 animate-ping pointer-events-none" />
-                    </div>
-                  )}
-                </div>
+                      <Popup className="custom-leaflet-popup">
+                        <div className="text-left p-1 space-y-1">
+                          <h4 className="font-sans font-bold text-slate-950 text-xs leading-tight">{issue.title}</h4>
+                          <p className="font-mono text-[9px] text-slate-500 leading-normal">{issue.location.address}</p>
+                          <div className="flex items-center space-x-1.5 pt-1">
+                            <span 
+                              className="rounded px-1.5 py-0.2 font-mono text-[8px] font-bold uppercase" 
+                              style={{ 
+                                backgroundColor: `${getStatusColorHex(issue.status)}15`, 
+                                color: getStatusColorHex(issue.status) 
+                              }}
+                            >
+                              {issue.status}
+                            </span>
+                            <span className="font-mono text-[8px] text-slate-400">
+                              Severity: {issue.severity}
+                            </span>
+                          </div>
+                          <p className="font-mono text-[8px] text-slate-400 pt-0.5">
+                            Reported: {new Date(issue.createdAt || '').toLocaleDateString()}
+                          </p>
+                          {issue.assignedVendorName && (
+                            <div className="mt-1 pt-1 border-t border-slate-100 dark:border-slate-800 flex items-center gap-1">
+                              <span className="font-sans text-[8px] font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">👷 Contractor:</span>
+                              <span className="font-sans text-[8px] font-medium text-slate-700 dark:text-slate-300">{issue.assignedVendorName}</span>
+                            </div>
+                          )}
+                        </div>
+                      </Popup>
+                    </Marker>
+                  );
+                })}
 
-                {/* Mini pin hover card */}
-                {hoveredIssue && (
-                  <div 
-                    className="absolute pointer-events-none -translate-x-1/2 -translate-y-[115%] bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 rounded-xl p-3 shadow-xl z-30 max-w-xs backdrop-blur-md transition-all duration-150"
-                    style={{
-                      left: `${((hoveredIssue.location.lng + 122.45) / 0.05) * 100}%`,
-                      top: `${(1 - (hoveredIssue.location.lat - 37.75) / 0.04) * 100}%`
-                    }}
-                  >
-                    <h4 className="font-sans font-bold text-slate-950 dark:text-white text-xs">{hoveredIssue.title}</h4>
-                    <p className="font-mono text-[9px] text-slate-400 mt-0.5">{hoveredIssue.location.address}</p>
-                  </div>
+                {/* AI Predictive Hotspots Pins if active */}
+                {showHeatmap && predictions.map((p) => {
+                  return (
+                    <Marker
+                      key={p.id}
+                      position={[p.lat, p.lng]}
+                      icon={createHotspotIcon()}
+                      eventHandlers={{
+                        click: () => handleHotspotClick(p)
+                      }}
+                    />
+                  );
+                })}
+
+                {/* Custom Dropped Pin */}
+                {droppedPin && (
+                  <Marker
+                    position={[droppedPin.lat, droppedPin.lng]}
+                    icon={createDroppedPinIcon()}
+                  />
                 )}
-              </div>
+              </MapContainer>
 
               {/* FLOATING ZOOM AND NAVIGATION CONTROLS */}
-              <div className="absolute top-4 right-4 flex flex-col space-y-2 z-20">
+              <div className="absolute top-4 right-4 flex flex-col space-y-2 z-[400]">
                 <button 
-                  onClick={() => setZoom(z => Math.min(4, z + 0.5))}
+                  onClick={() => setMapZoom(z => Math.min(19, z + 1))}
                   className="h-9 w-9 rounded-xl bg-white/90 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-350 shadow-md hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-90 transition-all cursor-pointer"
                   title="Zoom In"
                 >
                   <ZoomIn className="h-4 w-4" />
                 </button>
                 <button 
-                  onClick={() => {
-                    setZoom(z => {
-                      const next = Math.max(1, z - 0.5);
-                      if (next === 1) setPan({ x: 0, y: 0 }); // reset center
-                      return next;
-                    });
-                  }}
+                  onClick={() => setMapZoom(z => Math.max(1, z - 1))}
                   className="h-9 w-9 rounded-xl bg-white/90 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-350 shadow-md hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-90 transition-all cursor-pointer"
                   title="Zoom Out"
                 >
@@ -496,8 +397,8 @@ export default function InteractiveMap({ issues, predictions, onNavigate }: Inte
                 </button>
                 <button 
                   onClick={() => {
-                    setZoom(1);
-                    setPan({ x: 0, y: 0 });
+                    setMapCenter([37.7749, -122.4194]);
+                    setMapZoom(12);
                   }}
                   className="h-9 w-9 rounded-xl bg-white/90 dark:bg-slate-900/90 border border-slate-200 dark:border-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-350 shadow-md hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-90 transition-all cursor-pointer"
                   title="Reset View"
@@ -507,7 +408,7 @@ export default function InteractiveMap({ issues, predictions, onNavigate }: Inte
               </div>
 
               {/* Floating prediction hotspot toggle button */}
-              <div className="absolute bottom-4 left-4 flex flex-col space-y-2 z-20">
+              <div className="absolute bottom-4 left-4 flex flex-col space-y-2 z-[400]">
                 <button
                   onClick={() => setShowHeatmap(!showHeatmap)}
                   className={`rounded-xl border px-3.5 py-2 text-xs font-bold transition-all shadow-md flex items-center space-x-1.5 backdrop-blur-md cursor-pointer ${
@@ -522,7 +423,7 @@ export default function InteractiveMap({ issues, predictions, onNavigate }: Inte
               </div>
 
               {/* Floating map legend */}
-              <div className="absolute bottom-4 right-4 rounded-xl border border-slate-200/50 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 p-3 shadow-md flex items-center space-x-4 backdrop-blur-md max-w-[280px] z-20">
+              <div className="absolute bottom-4 right-4 rounded-xl border border-slate-200/50 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 p-3 shadow-md flex items-center space-x-4 backdrop-blur-md max-w-[280px] z-[400]">
                 <div className="space-y-1 text-left">
                   <span className="font-mono text-[9px] uppercase font-bold text-slate-400 block tracking-wide">Map Legend</span>
                   <div className="flex flex-wrap gap-2 text-[10px] font-semibold text-slate-600 dark:text-slate-400">
@@ -532,7 +433,6 @@ export default function InteractiveMap({ issues, predictions, onNavigate }: Inte
                   </div>
                 </div>
               </div>
-
             </div>
           </div>
         </div>
@@ -548,14 +448,14 @@ export default function InteractiveMap({ issues, predictions, onNavigate }: Inte
                   Incidents list ({filteredIssues.length})
                 </h3>
                 <p className="font-sans text-xs text-slate-400">
-                  Select a card below to center map or tap background to drop custom coordinates
+                  Select a card below to center map or click on map to drop custom coordinates
                 </p>
               </div>
 
               <div className="flex-1 overflow-y-auto max-h-[420px] no-scrollbar space-y-2.5 text-left pr-1">
                 {filteredIssues.length === 0 ? (
                   <div className="py-12 text-center space-y-3">
-                    <Map className="mx-auto h-8 w-8 text-slate-300 dark:text-slate-750" />
+                    <MapIcon className="mx-auto h-8 w-8 text-slate-300 dark:text-slate-750" />
                     <p className="text-xs text-slate-400">No issues found matching criteria.</p>
                   </div>
                 ) : (
@@ -643,6 +543,18 @@ export default function InteractiveMap({ issues, predictions, onNavigate }: Inte
                     <p className="font-sans text-[10px] text-slate-400">XP Priority</p>
                   </div>
                 </div>
+
+                {selectedIssue.assignedVendorName && (
+                  <div className="rounded-xl border border-amber-500/10 bg-amber-500/5 p-3 flex items-center justify-between text-left">
+                    <div>
+                      <span className="block text-[9px] font-mono text-amber-600 dark:text-amber-400 font-bold uppercase tracking-wider">👷 Contractor Allotted</span>
+                      <span className="block text-xs font-bold text-slate-800 dark:text-slate-200">{selectedIssue.assignedVendorName}</span>
+                    </div>
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[8px] font-bold font-mono bg-amber-500/15 text-amber-600 dark:text-amber-400 uppercase border border-amber-500/10">
+                      {selectedIssue.allotmentType === 'automatic' ? 'Auto-Route' : 'Manual'}
+                    </span>
+                  </div>
+                )}
               </div>
 
               <button
@@ -684,7 +596,7 @@ export default function InteractiveMap({ issues, predictions, onNavigate }: Inte
                   </p>
                 </div>
 
-                <div className="rounded-xl bg-white/80 dark:bg-slate-900/80 p-3.5 border border-purple-100/50 dark:border-purple-900/30">
+                <div className="rounded-xl bg-white/80 dark:bg-slate-900/80 p-3.5 border border-purple-100/50 dark:border-purple-900/30 text-left">
                   <span className="font-mono text-[8px] uppercase font-bold text-slate-400 block tracking-wider">AI Insight Reasoning</span>
                   <p className="font-sans text-xs text-slate-600 dark:text-slate-400 leading-relaxed mt-1.5">
                     {selectedHotspot.reason}

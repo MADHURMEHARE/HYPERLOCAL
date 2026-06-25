@@ -56,6 +56,14 @@ export default function LoginRegister({ onLoginSuccess }: LoginRegisterProps) {
       desc: 'Moderate community complaints, allocate budgets, view department velocity, and manage users.',
       avatar: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150',
       color: 'border-purple-500/30 bg-purple-50/10 hover:bg-purple-50/25 dark:bg-purple-950/10 dark:hover:bg-purple-950/20'
+    },
+    {
+      role: 'vendor' as UserRole,
+      title: 'Rapid Repairs Corp (Vendor)',
+      email: 'vendor@example.com',
+      desc: 'View automatically and manually allotted repair causes, log resolution progress, and upload completion proofs.',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=150',
+      color: 'border-amber-500/30 bg-amber-50/10 hover:bg-amber-50/25 dark:bg-amber-950/10 dark:hover:bg-amber-950/20'
     }
   ];
 
@@ -302,8 +310,8 @@ export default function LoginRegister({ onLoginSuccess }: LoginRegisterProps) {
                     <label className="font-sans text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">
                       Role / Clearance
                     </label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {(['citizen', 'officer', 'admin'] as UserRole[]).map((role) => (
+                    <div className="grid grid-cols-4 gap-2">
+                      {(['citizen', 'officer', 'admin', 'vendor'] as UserRole[]).map((role) => (
                         <button
                           key={role}
                           type="button"

@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-export type UserRole = 'citizen' | 'officer' | 'admin';
+export type UserRole = 'citizen' | 'officer' | 'admin' | 'vendor';
 
 export interface User {
   id: string;
@@ -56,6 +56,9 @@ export interface Issue {
   estimatedImpact: number; // Estimated number of residents affected
   assignedOfficerId?: string;
   assignedOfficerName?: string;
+  assignedVendorId?: string;
+  assignedVendorName?: string;
+  allotmentType?: 'automatic' | 'manual';
   costEstimate?: number; // Estimated cost in USD
   resolutionTimeline?: string; // Estimated completion date
   createdBy: string;

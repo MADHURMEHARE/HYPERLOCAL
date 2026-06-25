@@ -2,6 +2,19 @@ import { ISSUES, USERS, COMMENTS, addNotification } from '../db';
 import { Issue, IssuePriority, IssueStatus, ProgressUpdate } from '../../src/types';
 import { UserRepository } from './UserRepository';
 
+export function getAutoAllotedVendor(category: string): { id: string; name: string } | undefined {
+  if (category === 'Road Damage' || category === 'Broken Streetlight' || category === 'Fallen Tree') {
+    return { id: 'user_vendor_repairs', name: 'Rapid Repairs Corp' };
+  }
+  if (category === 'Water Leakage' || category === 'Drainage Issue') {
+    return { id: 'user_vendor_aquaflow', name: 'AquaFlow Utilities Ltd' };
+  }
+  if (category === 'Garbage Collection' || category === 'Illegal Dumping') {
+    return { id: 'user_vendor_ecowaste', name: 'EcoWaste Operators' };
+  }
+  return undefined;
+}
+
 export class IssueRepository {
   static getAll(filters: { category?: string; status?: string; priority?: string; q?: string } = {}): Issue[] {
     let filtered = [...ISSUES];
@@ -56,6 +69,8 @@ export class IssueRepository {
     const compositeScore = sevWeight + impactWeight;
     const priority: IssuePriority = compositeScore >= 6 ? 'Critical' : compositeScore >= 4 ? 'High' : compositeScore >= 3 ? 'Medium' : 'Low';
 
+    const autoVendor = getAutoAllotedVendor(category);
+
     const newIssue: Issue = {
       id: issueId,
       title,
@@ -77,6 +92,9 @@ export class IssueRepository {
       verificationScore: 1, 
       priority,
       estimatedImpact: Number(estimatedImpact) || 150,
+      assignedVendorId: autoVendor?.id,
+      assignedVendorName: autoVendor?.name,
+      allotmentType: autoVendor ? 'automatic' : undefined,
       createdBy: createdBy || 'user_alex',
       creatorName: creatorName || 'Alex Mercer',
       creatorAvatar: creatorAvatar || 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150',
@@ -89,7 +107,13 @@ export class IssueRepository {
           note: `Issue reported by ${creatorName || 'Citizen'}. Severity: ${severity || 'Medium'}. AI initiated impact evaluation.`,
           updatedBy: 'System AI',
           updatedAt: new Date().toISOString()
-        }
+        },
+        ...(autoVendor ? [{
+          status: 'Reported' as IssueStatus,
+          note: `System automatically allotted work to specialized vendor: ${autoVendor.name}.`,
+          updatedBy: 'System AI Allotment',
+          updatedAt: new Date().toISOString()
+        }] : [])
       ]
     };
 
@@ -98,6 +122,16 @@ export class IssueRepository {
     // Award points to creator
     if (createdBy) {
       UserRepository.addPoints(createdBy, 10); // Report Issue = 10 pts
+    }
+
+    if (autoVendor) {
+      addNotification(
+        autoVendor.id,
+        'Automatic Work Allotment',
+        `A new ${category} issue has been automatically allotted to you: "${title}".`,
+        'info',
+        issueId
+      );
     }
 
     // Notify officers of high-priority reports
@@ -211,11 +245,11 @@ export class IssueRepository {
     };
   }
 
-  static updateStatus(issueId: string, statusData: { status: IssueStatus; note?: string; officerId?: string; officerName?: string; costEstimate?: number; resolutionTimeline?: string; photoUrl?: string }): Issue | undefined {
+  static updateStatus(issueId: string, statusData: { status: IssueStatus; note?: string; officerId?: string; officerName?: string; costEstimate?: number; resolutionTimeline?: string; photoUrl?: string; vendorId?: string; vendorName?: string; allotmentType?: 'automatic' | 'manual' }): Issue | undefined {
     const issue = this.findById(issueId);
     if (!issue) return undefined;
 
-    const { status, note, officerId, officerName, costEstimate, resolutionTimeline, photoUrl } = statusData;
+    const { status, note, officerId, officerName, costEstimate, resolutionTimeline, photoUrl, vendorId, vendorName, allotmentType } = statusData;
 
     issue.status = status;
     if (officerId) {
@@ -227,6 +261,30 @@ export class IssueRepository {
     }
     if (resolutionTimeline) {
       issue.resolutionTimeline = resolutionTimeline;
+    }
+
+    if (vendorId) {
+      const oldVendorId = issue.assignedVendorId;
+      issue.assignedVendorId = vendorId;
+      issue.assignedVendorName = vendorName || 'Contractor';
+      issue.allotmentType = allotmentType || 'manual';
+
+      if (oldVendorId !== vendorId) {
+        addNotification(
+          vendorId,
+          'Work Allotment Updated',
+          `You have been ${issue.allotmentType} assigned to resolve: "${issue.title}".`,
+          'info',
+          issue.id
+        );
+
+        issue.progressUpdates.push({
+          status,
+          note: `Work allotted to Vendor: ${issue.assignedVendorName} (${issue.allotmentType === 'automatic' ? 'Automatic System Allocation' : 'Manual Inspector Allocation'}).`,
+          updatedBy: officerName || 'Municipal Officer',
+          updatedAt: new Date().toISOString()
+        });
+      }
     }
 
     const updateEntry: ProgressUpdate = {

@@ -18,6 +18,7 @@ import AnalyticsDashboard from './components/AnalyticsDashboard';
 import OfficerDashboard from './components/OfficerDashboard';
 import AdminDashboard from './components/AdminDashboard';
 import AiAssistant from './components/AiAssistant';
+import VendorDashboard from './components/VendorDashboard';
 import { User, Issue, Comment, PredictiveHotspot, LeaderboardEntry, Notification as AppNotification } from './types';
 
 // Root level component that sets up standard react-router-dom context
@@ -124,6 +125,8 @@ function AppContent() {
         navigate('/admin-dashboard');
       } else if (currentUser.role === 'officer') {
         navigate('/officer-dashboard');
+      } else if (currentUser.role === 'vendor') {
+        navigate('/vendor-dashboard');
       } else {
         navigate('/citizen-dashboard');
       }
@@ -136,6 +139,7 @@ function AppContent() {
     if (pathname === '/login') return 'login';
     if (pathname === '/citizen-dashboard') return 'citizen-dashboard';
     if (pathname === '/officer-dashboard') return 'officer-dashboard';
+    if (pathname === '/vendor-dashboard') return 'vendor-dashboard';
     if (pathname === '/admin-dashboard') return 'admin-dashboard';
     if (pathname === '/report') return 'report';
     if (pathname.startsWith('/issue/')) return 'issue-details';
@@ -172,6 +176,8 @@ function AppContent() {
       navigate('/admin-dashboard');
     } else if (user.role === 'officer') {
       navigate('/officer-dashboard');
+    } else if (user.role === 'vendor') {
+      navigate('/vendor-dashboard');
     } else {
       navigate('/citizen-dashboard');
     }
@@ -205,6 +211,7 @@ function AppContent() {
       else if (view === 'login') navigate('/login');
       else if (view === 'citizen-dashboard') navigate('/citizen-dashboard');
       else if (view === 'officer-dashboard') navigate('/officer-dashboard');
+      else if (view === 'vendor-dashboard') navigate('/vendor-dashboard');
       else if (view === 'admin-dashboard') navigate('/admin-dashboard');
       else if (view === 'report') navigate('/report');
       else if (view === 'map') navigate('/map');
@@ -458,14 +465,17 @@ function AppContent() {
               status: payload.status,
               note: payload.note || 'Municipal inspector updated worksite progress logs.',
               updatedAt: new Date().toISOString(),
-              updatedBy: payload.officerName || 'Inspector Desk'
+              updatedBy: payload.officerName || payload.vendorName || 'Inspector Desk'
             });
           }
           return {
             ...iss,
             status: payload.status || iss.status,
-            costEstimate: payload.costEstimate || iss.costEstimate,
+            costEstimate: payload.costEstimate !== undefined ? payload.costEstimate : iss.costEstimate,
             resolutionTimeline: payload.resolutionTimeline || iss.resolutionTimeline,
+            assignedVendorId: payload.vendorId !== undefined ? payload.vendorId : iss.assignedVendorId,
+            assignedVendorName: payload.vendorName !== undefined ? payload.vendorName : iss.assignedVendorName,
+            allotmentType: payload.allotmentType !== undefined ? payload.allotmentType : iss.allotmentType,
             progressUpdates: updates
           };
         }
@@ -656,6 +666,20 @@ function AppContent() {
                 user={currentUser}
                 issues={issues}
                 onNavigate={handleNavigate}
+              />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          } />
+
+          {/* Vendor Dashboard */}
+          <Route path="/vendor-dashboard" element={
+            currentUser ? (
+              <VendorDashboard
+                user={currentUser}
+                issues={issues}
+                onNavigate={handleNavigate}
+                onUpdateStatus={handleUpdateStatus}
               />
             ) : (
               <Navigate to="/" replace />

@@ -25,6 +25,48 @@ import {
   Settings
 } from 'lucide-react';
 import { IssueCategory, IssueLocation, IssuePriority } from '../types';
+import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+// Controller component to programmatically pan and zoom the map smoothly in ReportIssue
+function MapController({ center, zoom }: { center: [number, number]; zoom: number }) {
+  const map = useMap();
+
+  useEffect(() => {
+    map.setView(center, zoom, { animate: true });
+  }, [map, center, zoom]);
+
+  return null;
+}
+
+// Map event listener to handle map click events
+function MapEvents({ onMapClick }: { onMapClick: (lat: number, lng: number) => void }) {
+  useMapEvents({
+    click(e) {
+      onMapClick(e.latlng.lat, e.latlng.lng);
+    }
+  });
+  return null;
+}
+
+const createDroppedPinIcon = () => {
+  return L.divIcon({
+    html: `
+      <div class="relative cursor-pointer animate-pulse" style="width: 40px; height: 40px;">
+        <svg class="h-10 w-10 text-rose-600 fill-rose-600/20 drop-shadow-xl" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path>
+          <circle cx="12" cy="10" r="3" fill="currentColor"></circle>
+        </svg>
+        <span class="absolute top-3 left-3.5 h-3 w-3 rounded-full bg-rose-500 animate-ping pointer-events-none"></span>
+      </div>
+    `,
+    className: 'custom-leaflet-dropped-icon',
+    iconSize: [40, 40],
+    iconAnchor: [20, 40],
+    popupAnchor: [0, -40]
+  });
+};
 
 interface ReportIssueProps {
   userId: string;
@@ -337,20 +379,10 @@ export default function ReportIssue({
     }
   };
 
-  // Click coordinate mapper
-  const handleMapCanvasClick = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    
-    const normX = x / rect.width;
-    const normY = y / rect.height;
-    
-    const calculatedLat = 37.75 + (1 - normY) * 0.04;
-    const calculatedLng = -122.45 + normX * 0.05;
-
-    setLat(calculatedLat);
-    setLng(calculatedLng);
+  // Map click coordinate handler
+  const handleMapClick = (clickedLat: number, clickedLng: number) => {
+    setLat(clickedLat);
+    setLng(clickedLng);
     setAddress('Resolving address...');
     setWard('Resolving ward...');
 
@@ -358,25 +390,27 @@ export default function ReportIssue({
     fetch('/api/ai/reverse-geocode', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ lat: calculatedLat, lng: calculatedLng })
+      body: JSON.stringify({ lat: clickedLat, lng: clickedLng })
     })
       .then(res => res.json())
       .then(data => {
         if (data && data.address) {
           setAddress(data.address);
           setWard(data.ward || 'Ward 3 - Mission');
+        } else {
+          throw new Error('Geocoding response structure incomplete');
         }
       })
       .catch(err => {
         console.error('Dynamic geocoding error, falling back:', err);
-        const streets = ['Valencia St', 'Mission St', 'Oak Crescent', 'Dolores St', 'Dolores Park', 'Harrison St', 'Folsom St'];
-        const blocks = Math.floor(normX * 900) + 100;
-        const selectedStreet = streets[Math.floor(normY * streets.length)];
-        const generatedAddr = `${blocks} ${selectedStreet}, San Francisco, CA`;
+        const streets = ['Valencia St', 'Mission St', 'Oak Crescent', 'Dolores St', 'Harrison St', 'Folsom St', 'Market St', 'Castro St'];
+        const randomStreet = streets[Math.floor(Math.abs(clickedLat * 100) % streets.length)];
+        const generatedAddr = `${Math.floor(Math.abs(clickedLng * 1000) % 900) + 100} ${randomStreet}, San Francisco, CA`;
         setAddress(generatedAddr);
 
         const wards = ['Ward 3 - Mission', 'Ward 5 - Heights', 'Ward 2 - Castro', 'Ward 4 - Noe'];
-        setWard(wards[Math.floor(normX * wards.length)]);
+        const generatedWard = wards[Math.floor(Math.abs(clickedLng * 1000) % wards.length)];
+        setWard(generatedWard);
       });
   };
 
@@ -924,38 +958,21 @@ export default function ReportIssue({
                     <span className="text-[9px] text-slate-400">Click map to drop marker</span>
                   </div>
 
-                  <div 
-                    onClick={handleMapCanvasClick}
-                    className="relative h-40 w-full rounded-2xl bg-blue-50/40 dark:bg-slate-950 border border-slate-200 dark:border-slate-850 cursor-crosshair overflow-hidden group shadow-inner"
-                  >
-                    {/* Simulated Map styling details */}
-                    <div className="absolute inset-0 grid grid-cols-8 grid-rows-5 pointer-events-none opacity-20 dark:opacity-10">
-                      <div className="border-r border-b border-slate-400" />
-                      <div className="border-r border-b border-slate-400" />
-                      <div className="border-r border-b border-slate-400" />
-                      <div className="border-r border-b border-slate-400" />
-                      <div className="border-r border-b border-slate-400" />
-                      <div className="border-r border-b border-slate-400" />
-                      <div className="border-r border-b border-slate-400" />
-                      <div className="border-r border-b border-slate-400" />
-                    </div>
-
-                    <div className="absolute top-6 left-12 h-14 w-28 bg-emerald-500/5 rounded-full blur-xs pointer-events-none" />
-                    <div className="absolute bottom-4 right-16 h-12 w-24 bg-blue-500/5 rounded-full blur-xs pointer-events-none" />
-
-                    {/* Active target cursor marker */}
-                    <div 
-                      className="absolute -translate-x-1/2 -translate-y-full transition-all duration-300 pointer-events-none"
-                      style={{
-                        left: `${((lng + 122.45) / 0.05) * 100}%`,
-                        top: `${(1 - (lat - 37.75) / 0.04) * 100}%`
-                      }}
+                  <div className="relative h-48 w-full rounded-2xl border border-slate-200 dark:border-slate-850 overflow-hidden shadow-inner z-10">
+                    <MapContainer
+                      center={[lat, lng]}
+                      zoom={14}
+                      scrollWheelZoom={true}
+                      style={{ width: '100%', height: '100%' }}
                     >
-                      <MapPin className="h-6 w-6 text-rose-600 animate-bounce" />
-                      <span className="absolute left-3 top-0 rounded-md bg-rose-600 px-1.5 py-0.5 font-mono text-[8px] font-bold text-white shadow-xs whitespace-nowrap">
-                        Drop Point
-                      </span>
-                    </div>
+                      <TileLayer
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      />
+                      <MapController center={[lat, lng]} zoom={14} />
+                      <MapEvents onMapClick={handleMapClick} />
+                      <Marker position={[lat, lng]} icon={createDroppedPinIcon()} />
+                    </MapContainer>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4 rounded-xl bg-slate-50 dark:bg-slate-950 p-3 border border-slate-150 dark:border-slate-900 text-left">

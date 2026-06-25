@@ -4,6 +4,7 @@
  */
 
 import React from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import { 
   Shield, 
   MapPin, 
@@ -128,61 +129,116 @@ export default function LandingPage({ onNavigate, user, onLoginSuccess }: Landin
     }
   };
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.12,
+        delayChildren: 0.05
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: {
+      opacity: 1,
+      y: 0,
+      transition: { type: 'spring', stiffness: 100, damping: 15 }
+    }
+  };
+
   return (
     <div className="relative overflow-hidden bg-slate-50 dark:bg-[#070A13] transition-colors duration-300 min-h-screen pb-16">
       {/* Background Glow */}
-      <div className="absolute top-0 left-1/4 h-96 w-96 rounded-full bg-blue-500/10 blur-3xl" />
-      <div className="absolute top-1/3 right-1/4 h-96 w-96 rounded-full bg-emerald-500/5 blur-3xl" />
+      <motion.div 
+        animate={{ 
+          scale: [1, 1.1, 0.9, 1],
+          x: [0, 20, -15, 0],
+          y: [0, -15, 15, 0]
+        }}
+        transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute top-0 left-1/4 h-96 w-96 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" 
+      />
+      <motion.div 
+        animate={{ 
+          scale: [1, 0.9, 1.15, 1],
+          x: [0, -30, 20, 0],
+          y: [0, 20, -10, 0]
+        }}
+        transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute top-1/3 right-1/4 h-96 w-96 rounded-full bg-emerald-500/5 blur-3xl pointer-events-none" 
+      />
 
       {/* Hero Section */}
       <div className="mx-auto max-w-7xl px-4 pt-16 sm:px-6 lg:px-8 lg:pt-24">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           
           {/* Hero Left Text */}
-          <div className="lg:col-span-7 space-y-6">
-            <div className="inline-flex items-center space-x-2 rounded-full bg-blue-50 dark:bg-[#0f1422]/60 border border-blue-200/50 dark:border-blue-900/30 px-3.5 py-1 text-xs font-semibold text-blue-700 dark:text-cyan-400">
+          <motion.div 
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="lg:col-span-7 space-y-6"
+          >
+            <motion.div variants={itemVariants} className="inline-flex items-center space-x-2 rounded-full bg-blue-50 dark:bg-[#0f1422]/60 border border-blue-200/50 dark:border-blue-900/30 px-3.5 py-1 text-xs font-semibold text-blue-700 dark:text-cyan-400">
               <Activity className="h-3.5 w-3.5 animate-pulse text-blue-500" />
               <span>Next-Gen Civic-Tech Platform</span>
-            </div>
-
-            <h1 className="font-display text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-5.5xl leading-tight">
+            </motion.div>
+ 
+            <motion.h1 variants={itemVariants} className="font-display text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-5.5xl leading-tight">
               Hyperlocal Problem Solving <br />
               <span className="bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-500 bg-clip-text text-transparent drop-shadow-[0_2px_10px_rgba(6,182,212,0.15)]">
                 Powered by Civic AI
               </span>
-            </h1>
-
-            <p className="font-sans text-base sm:text-lg text-slate-500 dark:text-slate-450 leading-relaxed max-w-2xl">
+            </motion.h1>
+ 
+            <motion.p variants={itemVariants} className="font-sans text-base sm:text-lg text-slate-500 dark:text-slate-450 leading-relaxed max-w-2xl">
               Become a civic hero. Report local infrastructure problems, upvote neighbors' concerns, and track municipal work orders from assignment to resolution in a 100% transparent dashboard.
-            </p>
-
-            <div className="flex flex-col sm:flex-row gap-4 pt-2">
-              <button
+            </motion.p>
+ 
+            <motion.div variants={itemVariants} className="flex flex-col sm:flex-row gap-4 pt-2">
+              <motion.button
+                whileHover={{ scale: 1.02, y: -2 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={user ? () => onNavigate('report') : handleScrollToLogin}
-                className="flex items-center justify-center rounded-full bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white font-bold text-sm px-6 py-3.5 shadow-lg shadow-blue-500/25 hover:shadow-[0_0_25px_rgba(6,182,212,0.35)] transition-all duration-300 hover:-translate-y-0.5 cursor-pointer"
+                className="flex items-center justify-center rounded-full bg-gradient-to-r from-cyan-500 via-blue-600 to-indigo-600 hover:from-cyan-400 hover:to-indigo-500 text-white font-bold text-sm px-6 py-3.5 shadow-lg shadow-blue-500/25 hover:shadow-[0_0_25px_rgba(6,182,212,0.35)] transition-all duration-300 cursor-pointer"
               >
                 {user ? "Report an Issue Now" : "Sign In to Report Issues"}
                 <ArrowRight className="ml-2 h-4 w-4" />
-              </button>
-              <button
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.02, y: -2 }}
+                whileTap={{ scale: 0.98 }}
                 onClick={user ? () => onNavigate('map') : handleScrollToLogin}
                 className="flex items-center justify-center rounded-full border border-slate-200 dark:border-blue-955/40 bg-white/70 dark:bg-[#0f1422]/60 text-slate-700 dark:text-slate-300 font-bold text-sm px-6 py-3.5 backdrop-blur-md transition-all duration-300 hover:bg-slate-50 dark:hover:bg-slate-800/40 cursor-pointer shadow-sm hover:shadow-[0_0_15px_rgba(59,130,246,0.1)]"
               >
                 View Live Incident Map
-              </button>
-            </div>
-          </div>
+              </motion.button>
+            </motion.div>
+          </motion.div>
 
           {/* Hero Right Visual (Interactive dashboard frame preview) */}
-          <div className="lg:col-span-5 relative">
-            <div className="relative rounded-3xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 p-5 shadow-2xl backdrop-blur-md">
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95, y: 15 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.25 }}
+            className="lg:col-span-5 relative"
+          >
+            <motion.div 
+              animate={{ y: [0, -8, 0] }}
+              transition={{ repeat: Infinity, duration: 5, ease: "easeInOut" }}
+              className="relative rounded-3xl border border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 p-5 shadow-2xl backdrop-blur-md hover:shadow-cyan-500/10 hover:border-cyan-500/20 transition-all duration-300"
+            >
               <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-850 pb-4 mb-4">
                 <div className="flex items-center space-x-2">
                   <span className="h-3 w-3 rounded-full bg-rose-500" />
                   <span className="h-3 w-3 rounded-full bg-amber-500" />
                   <span className="h-3 w-3 rounded-full bg-emerald-500" />
                 </div>
-                <span className="font-mono text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500">
+                <span className="font-mono text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 flex items-center gap-1">
+                  <span className="h-1.5 w-1.5 rounded-full bg-cyan-500 animate-ping" />
                   AI Prioritization Model
                 </span>
               </div>
@@ -202,8 +258,11 @@ export default function LandingPage({ onNavigate, user, onLoginSuccess }: Landin
                 </h3>
                 
                 {/* AI Badge inside hero card */}
-                <div className="mt-3.5 rounded-xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200/30 p-3 flex items-start space-x-2.5">
-                  <Brain className="h-5 w-5 text-blue-600 mt-0.5 shrink-0" />
+                <motion.div 
+                  whileHover={{ scale: 1.02 }}
+                  className="mt-3.5 rounded-xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-200/30 p-3 flex items-start space-x-2.5 shadow-xs"
+                >
+                  <Brain className="h-5 w-5 text-blue-600 dark:text-cyan-400 mt-0.5 shrink-0" />
                   <div>
                     <h4 className="font-sans text-xs font-bold text-blue-800 dark:text-blue-400">
                       Gemini Technical Classification
@@ -212,7 +271,7 @@ export default function LandingPage({ onNavigate, user, onLoginSuccess }: Landin
                       Substrate cavitation detected. High impact risk for cycles. Severity: High (94% confidence).
                     </p>
                   </div>
-                </div>
+                </motion.div>
 
                 {/* Verification Score Meter */}
                 <div className="mt-4 pt-3 border-t border-slate-200/50 dark:border-slate-850">
@@ -221,21 +280,50 @@ export default function LandingPage({ onNavigate, user, onLoginSuccess }: Landin
                     <span className="font-mono font-bold text-slate-900 dark:text-white">52/100</span>
                   </div>
                   <div className="h-2 w-full rounded-full bg-slate-200 dark:bg-slate-800 overflow-hidden">
-                    <div className="h-full rounded-full bg-emerald-500 w-[52%]" />
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: "52%" }}
+                      transition={{ duration: 1.2, delay: 0.6, ease: "easeOut" }}
+                      className="h-full rounded-full bg-gradient-to-r from-emerald-500 to-teal-400" 
+                    />
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
+            </motion.div>
+          </motion.div>
 
         </div>
       </div>
 
       {/* Stats Ribbon */}
       <div className="mx-auto max-w-7xl px-4 mt-20 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 rounded-3xl border border-slate-200/60 dark:border-slate-800/60 bg-white/60 dark:bg-slate-900/40 p-6 sm:p-8 shadow-md backdrop-blur-xs">
+        <motion.div 
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-50px" }}
+          variants={{
+            hidden: { opacity: 0, y: 30 },
+            visible: {
+              opacity: 1,
+              y: 0,
+              transition: {
+                staggerChildren: 0.1,
+                duration: 0.6
+              }
+            }
+          }}
+          className="grid grid-cols-2 md:grid-cols-4 gap-6 rounded-3xl border border-slate-200/60 dark:border-slate-800/60 bg-white/60 dark:bg-slate-900/40 p-6 sm:p-8 shadow-md backdrop-blur-xs"
+        >
           {stats.map((stat, idx) => (
-            <div key={idx} className="space-y-1.5">
+            <motion.div 
+              key={idx} 
+              variants={{
+                hidden: { opacity: 0, y: 15 },
+                visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100 } }
+              }}
+              whileHover={{ scale: 1.03 }}
+              className="space-y-1.5 transition-all"
+            >
               <div className="flex items-center space-x-2">
                 <div className={`p-2 rounded-lg ${stat.color}`}>
                   <stat.icon className="h-4.5 w-4.5" />
@@ -247,15 +335,21 @@ export default function LandingPage({ onNavigate, user, onLoginSuccess }: Landin
               <p className="font-sans text-xs font-semibold text-slate-400 dark:text-slate-500">
                 {stat.label}
               </p>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
 
       {/* About Section (The Mission) */}
-      <div className="mx-auto max-w-7xl px-4 mt-24 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-7xl px-4 mt-24 sm:px-6 lg:px-8 overflow-hidden">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-          <div className="lg:col-span-6 space-y-6 text-left">
+          <motion.div 
+            initial={{ opacity: 0, x: -30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.6 }}
+            className="lg:col-span-6 space-y-6 text-left"
+          >
             <div className="inline-flex items-center space-x-1.5 text-blue-600 dark:text-cyan-400 font-mono text-xs uppercase font-bold tracking-wider">
               <Shield className="h-4 w-4" />
               <span>About CommunityHero</span>
@@ -282,14 +376,20 @@ export default function LandingPage({ onNavigate, user, onLoginSuccess }: Landin
                 <p className="text-xs text-slate-400 dark:text-slate-500 leading-relaxed">Repairs require photographic proof and resident validation before being archived.</p>
               </div>
             </div>
-          </div>
+          </motion.div>
           
-          <div className="lg:col-span-6">
-            <div className="relative rounded-3xl overflow-hidden shadow-xl border border-slate-200 dark:border-slate-800">
+          <motion.div 
+            initial={{ opacity: 0, x: 30 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.6 }}
+            className="lg:col-span-6"
+          >
+            <div className="relative rounded-3xl overflow-hidden shadow-xl border border-slate-200 dark:border-slate-800 group">
               <img 
                 src="https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&w=800&q=80" 
                 alt="Infrastructure Repair Crew" 
-                className="w-full h-80 object-cover hover:scale-105 transition-transform duration-500"
+                className="w-full h-80 object-cover group-hover:scale-105 transition-transform duration-500"
                 referrerPolicy="no-referrer"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent flex items-end p-6">
@@ -299,32 +399,63 @@ export default function LandingPage({ onNavigate, user, onLoginSuccess }: Landin
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
       </div>
 
       {/* How it Works / Core Features Grid */}
       <div className="mx-auto max-w-7xl px-4 mt-24 sm:px-6 lg:px-8">
-        <div className="text-center max-w-2xl mx-auto space-y-3">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-50px" }}
+          transition={{ duration: 0.5 }}
+          className="text-center max-w-2xl mx-auto space-y-3"
+        >
           <h2 className="font-display text-3xl font-bold tracking-tight text-slate-950 dark:text-white">
             Smart Hyperlocal Civic Infrastructure
           </h2>
           <p className="font-sans text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
             Four key pillars designed to turn citizens and public works departments into a single coordinated team.
           </p>
-        </div>
+        </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-12">
+        <motion.div 
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-50px" }}
+          variants={{
+            hidden: {},
+            visible: {
+              transition: {
+                staggerChildren: 0.1
+              }
+            }
+          }}
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mt-12"
+        >
           {features.map((feat, idx) => (
-            <div 
+            <motion.div 
               key={idx} 
-              className="flex flex-col justify-between rounded-2xl border border-slate-200/50 dark:border-slate-800/50 bg-white dark:bg-slate-900 p-6 shadow-xs hover:shadow-md transition-all duration-300"
+              variants={{
+                hidden: { opacity: 0, y: 25 },
+                visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 90, damping: 14 } }
+              }}
+              whileHover={{ 
+                y: -6, 
+                boxShadow: "0 10px 30px -15px rgba(59, 130, 246, 0.15)",
+                borderColor: "rgba(59, 130, 246, 0.3)" 
+              }}
+              className="flex flex-col justify-between rounded-2xl border border-slate-200/50 dark:border-slate-800/50 bg-white dark:bg-slate-900 p-6 shadow-xs transition-all duration-300"
             >
               <div className="space-y-4 text-left">
                 <div className="flex items-center justify-between">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-955/40 text-blue-600 dark:text-cyan-400">
+                  <motion.div 
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                    className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-955/40 text-blue-600 dark:text-cyan-400"
+                  >
                     <feat.icon className="h-5 w-5" />
-                  </div>
+                  </motion.div>
                   <span className="rounded-md bg-slate-50 dark:bg-slate-950 px-2 py-0.5 font-mono text-[9px] font-bold text-slate-400 dark:text-slate-500 border border-slate-200/30 dark:border-slate-800/30 uppercase tracking-wide">
                     {feat.badge}
                   </span>
@@ -336,14 +467,20 @@ export default function LandingPage({ onNavigate, user, onLoginSuccess }: Landin
                   {feat.description}
                 </p>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
 
       {/* Testimonials Section */}
       <div className="mx-auto max-w-7xl px-4 mt-28 sm:px-6 lg:px-8">
-        <div className="text-center max-w-2xl mx-auto space-y-3">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-50px" }}
+          transition={{ duration: 0.5 }}
+          className="text-center max-w-2xl mx-auto space-y-3"
+        >
           <div className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-amber-500/10 text-amber-500">
             <Quote className="h-4.5 w-4.5" />
           </div>
@@ -353,13 +490,35 @@ export default function LandingPage({ onNavigate, user, onLoginSuccess }: Landin
           <p className="font-sans text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
             Hear from residents, inspectors, and administrators who are building better cities together.
           </p>
-        </div>
+        </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
+        <motion.div 
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-50px" }}
+          variants={{
+            hidden: {},
+            visible: {
+              transition: {
+                staggerChildren: 0.12
+              }
+            }
+          }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12"
+        >
           {testimonials.map((test, idx) => (
-            <div 
+            <motion.div 
               key={idx} 
-              className="relative flex flex-col justify-between rounded-3xl border border-slate-200/50 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/40 p-6 sm:p-8 shadow-sm backdrop-blur-md text-left transition-all duration-300 hover:shadow-lg"
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100 } }
+              }}
+              whileHover={{ 
+                y: -6, 
+                boxShadow: "0 12px 30px -10px rgba(0,0,0,0.08)",
+                borderColor: "rgba(245, 158, 11, 0.2)"
+              }}
+              className="relative flex flex-col justify-between rounded-3xl border border-slate-200/50 dark:border-slate-800/50 bg-white/60 dark:bg-slate-900/40 p-6 sm:p-8 shadow-sm backdrop-blur-md text-left transition-all duration-300"
             >
               <div className="space-y-4">
                 <div className="flex space-x-1">
@@ -388,14 +547,20 @@ export default function LandingPage({ onNavigate, user, onLoginSuccess }: Landin
                   </span>
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
 
       {/* Blog Section */}
       <div className="mx-auto max-w-7xl px-4 mt-28 sm:px-6 lg:px-8">
-        <div className="text-center max-w-2xl mx-auto space-y-3">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-50px" }}
+          transition={{ duration: 0.5 }}
+          className="text-center max-w-2xl mx-auto space-y-3"
+        >
           <div className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-500">
             <BookOpen className="h-4.5 w-4.5" />
           </div>
@@ -405,19 +570,43 @@ export default function LandingPage({ onNavigate, user, onLoginSuccess }: Landin
           <p className="font-sans text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
             Latest guidelines, innovation, and educational content on municipal AI development and citizen networks.
           </p>
-        </div>
+        </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12">
+        <motion.div 
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, margin: "-50px" }}
+          variants={{
+            hidden: {},
+            visible: {
+              transition: {
+                staggerChildren: 0.1
+              }
+            }
+          }}
+          className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-12"
+        >
           {blogPosts.map((post, idx) => (
-            <div 
+            <motion.div 
               key={idx} 
-              className="flex flex-col rounded-3xl overflow-hidden border border-slate-200/50 dark:border-slate-800/50 bg-white dark:bg-slate-900 shadow-xs hover:shadow-lg hover:-translate-y-1 transition-all duration-300 group"
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 80 } }
+              }}
+              whileHover={{ 
+                y: -8, 
+                boxShadow: "0 15px 35px -15px rgba(59, 130, 246, 0.15)",
+                borderColor: "rgba(59, 130, 246, 0.2)"
+              }}
+              className="flex flex-col rounded-3xl overflow-hidden border border-slate-200/50 dark:border-slate-800/50 bg-white dark:bg-slate-900 shadow-xs transition-all duration-300 group"
             >
               <div className="h-48 overflow-hidden relative">
-                <img 
+                <motion.img 
+                  whileHover={{ scale: 1.06 }}
+                  transition={{ duration: 0.4 }}
                   src={post.image} 
                   alt={post.title} 
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  className="w-full h-full object-cover"
                   referrerPolicy="no-referrer"
                 />
                 <span className="absolute top-4 left-4 rounded-full bg-slate-900/80 backdrop-blur-md px-3 py-1 font-mono text-[9px] font-bold text-cyan-400 uppercase tracking-wider">
@@ -450,14 +639,18 @@ export default function LandingPage({ onNavigate, user, onLoginSuccess }: Landin
                   </span>
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
-      </div>
-
-      {/* Municipal & Administrative Showcase */}
-      <div className="mx-auto max-w-7xl px-4 mt-28 sm:px-6 lg:px-8">
-        <div className="rounded-3xl bg-gradient-to-br from-slate-900 to-indigo-950 text-white p-8 sm:p-12 shadow-xl border border-indigo-900/30 relative overflow-hidden">
+        </motion.div>
+      </div>      {/* Municipal & Administrative Showcase */}
+      <div className="mx-auto max-w-7xl px-4 mt-28 sm:px-6 lg:px-8 overflow-hidden">
+        <motion.div 
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-50px" }}
+          transition={{ duration: 0.7, type: "spring", stiffness: 70 }}
+          className="rounded-3xl bg-gradient-to-br from-slate-900 to-indigo-950 text-white p-8 sm:p-12 shadow-xl border border-indigo-900/30 relative overflow-hidden"
+        >
           <div className="absolute top-0 right-0 h-80 w-80 bg-blue-500/10 rounded-full blur-3xl" />
           
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
@@ -472,41 +665,66 @@ export default function LandingPage({ onNavigate, user, onLoginSuccess }: Landin
                 Are you a Ward Officer, City Inspector, or Municipal Administrator? Community Hero provides specialized dashboards to filter pending complaints, delegate repairs to field crews, outline cost metrics, and release completion photo evidence.
               </p>
               <div className="flex flex-wrap gap-4 pt-2">
-                <button
-                  onClick={user ? () => onNavigate(user.role === 'citizen' ? 'citizen-dashboard' : user.role === 'officer' ? 'officer-dashboard' : 'admin-dashboard') : handleScrollToLogin}
+                <motion.button
+                  whileHover={{ scale: 1.03, y: -1 }}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={user ? () => onNavigate(
+                    user.role === 'citizen' 
+                      ? 'citizen-dashboard' 
+                      : user.role === 'officer' 
+                        ? 'officer-dashboard' 
+                        : user.role === 'vendor'
+                          ? 'vendor-dashboard'
+                          : 'admin-dashboard'
+                  ) : handleScrollToLogin}
                   className="flex items-center justify-center rounded-xl bg-white hover:bg-slate-100 text-slate-950 font-bold text-xs px-5 py-3 shadow-md transition-all cursor-pointer"
                 >
                   Access Inspector Portal
                   <ArrowRight className="ml-1.5 h-4 w-4 text-slate-900" />
-                </button>
-                <button
+                </motion.button>
+                <motion.button
+                  whileHover={{ scale: 1.03, y: -1 }}
+                  whileTap={{ scale: 0.97 }}
                   onClick={user ? () => onNavigate('analytics') : handleScrollToLogin}
                   className="flex items-center justify-center rounded-xl border border-white/20 hover:border-white/40 bg-white/5 hover:bg-white/10 text-white font-bold text-xs px-5 py-3 transition-all cursor-pointer"
                 >
                   View Municipal Analytics
-                </button>
+                </motion.button>
               </div>
             </div>
             
             <div className="lg:col-span-5 grid grid-cols-2 gap-4">
-              <div className="rounded-2xl bg-white/5 border border-white/10 p-4 text-left">
+              <motion.div 
+                whileHover={{ scale: 1.04, y: -2 }}
+                className="rounded-2xl bg-white/5 border border-white/10 p-4 text-left transition-all duration-300"
+              >
                 <TrendingUp className="h-6 w-6 text-indigo-400 mb-2" />
                 <h4 className="font-display font-semibold text-sm">Actionable Analytics</h4>
                 <p className="text-[11px] text-indigo-200/70 mt-1">Live incident rates, ward breakdowns, and resolving velocity curves.</p>
-              </div>
-              <div className="rounded-2xl bg-white/5 border border-white/10 p-4 text-left">
+              </motion.div>
+              <motion.div 
+                whileHover={{ scale: 1.04, y: -2 }}
+                className="rounded-2xl bg-white/5 border border-white/10 p-4 text-left transition-all duration-300"
+              >
                 <Shield className="h-6 w-6 text-emerald-400 mb-2" />
                 <h4 className="font-display font-semibold text-sm">Transparency Metrics</h4>
                 <p className="text-[11px] text-indigo-200/70 mt-1">Every cost estimate, municipal note, and officer assignment open to the public.</p>
-              </div>
+              </motion.div>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Login Section - Only visible when unauthenticated */}
       {!user && onLoginSuccess && (
-        <div id="login-section" className="mx-auto max-w-7xl px-4 mt-28 sm:px-6 lg:px-8">
+        <motion.div 
+          initial={{ opacity: 0, y: 35 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-50px" }}
+          transition={{ duration: 0.6 }}
+          id="login-section" 
+          className="mx-auto max-w-7xl px-4 mt-28 sm:px-6 lg:px-8"
+        >
           <div className="text-center max-w-2xl mx-auto space-y-3 mb-10">
             <div className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-400">
               <Sparkles className="h-4.5 w-4.5 animate-pulse" />
@@ -514,12 +732,12 @@ export default function LandingPage({ onNavigate, user, onLoginSuccess }: Landin
             <h2 className="font-display text-3xl font-bold tracking-tight text-slate-950 dark:text-white">
               Join the Civic Movement
             </h2>
-            <p className="font-sans text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+            <p className="font-sans text-sm text-slate-500 dark:text-slate-450 leading-relaxed">
               Log in to your CommunityHero portal using our simulated quick authorization panel or custom email entry.
             </p>
           </div>
           <LoginRegister onLoginSuccess={onLoginSuccess} />
-        </div>
+        </motion.div>
       )}
 
     </div>

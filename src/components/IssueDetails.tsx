@@ -19,7 +19,8 @@ import {
   User as UserIcon,
   Check,
   Send,
-  Camera
+  Camera,
+  Briefcase
 } from 'lucide-react';
 import { User, Issue, Comment } from '../types';
 
@@ -55,6 +56,7 @@ export default function IssueDetails({
   const [officerCost, setOfficerCost] = useState('');
   const [officerTimeline, setOfficerTimeline] = useState('');
   const [progressPhoto, setProgressPhoto] = useState('');
+  const [selectedVendorId, setSelectedVendorId] = useState('');
 
   const [notification, setNotification] = useState<{ message: string; type: 'success' | 'info' | 'warning' } | null>(null);
 
@@ -64,6 +66,23 @@ export default function IssueDetails({
   };
 
   const issue = issues.find(i => i.id === issueId);
+
+  const vendorsList = [
+    { id: 'user_vendor_repairs', name: 'Rapid Repairs Corp' },
+    { id: 'user_vendor_aquaflow', name: 'AquaFlow Utilities Ltd' },
+    { id: 'user_vendor_ecowaste', name: 'EcoWaste Operators' }
+  ];
+
+  // Dynamically synchronize console inputs when issue loads or changes
+  React.useEffect(() => {
+    if (issue) {
+      setOfficerStatus(issue.status);
+      setOfficerCost(issue.costEstimate ? String(issue.costEstimate) : '');
+      setOfficerTimeline(issue.resolutionTimeline || '');
+      setSelectedVendorId(issue.assignedVendorId || '');
+    }
+  }, [issueId, issue]);
+
   if (!issue) {
     return (
       <div className="mx-auto max-w-2xl px-4 py-16 text-center space-y-4">
@@ -99,9 +118,21 @@ export default function IssueDetails({
     const payload: any = {};
     if (officerStatus) payload.status = officerStatus;
     if (officerNote) payload.note = officerNote;
-    if (officerCost) payload.costEstimate = Number(officerCost);
-    if (officerTimeline) payload.resolutionTimeline = officerTimeline;
+    payload.costEstimate = officerCost ? Number(officerCost) : 0;
+    payload.resolutionTimeline = officerTimeline || '';
     if (progressPhoto) payload.photoUrl = progressPhoto;
+    
+    // Vendor assignment details
+    if (selectedVendorId) {
+      payload.vendorId = selectedVendorId;
+      const v = vendorsList.find(x => x.id === selectedVendorId);
+      payload.vendorName = v ? v.name : '';
+      payload.allotmentType = 'manual';
+    } else {
+      payload.vendorId = '';
+      payload.vendorName = '';
+      payload.allotmentType = '';
+    }
     
     payload.officerId = user.id;
     payload.officerName = user.name;
@@ -483,6 +514,25 @@ export default function IssueDetails({
                 </span>
               </div>
 
+              <div className="flex items-center justify-between font-sans text-xs border-t border-slate-150 dark:border-slate-850 pt-2.5">
+                <span className="text-slate-400">Assigned Vendor</span>
+                <span className="font-semibold text-slate-900 dark:text-white flex items-center space-x-1">
+                  <Briefcase className="h-3.5 w-3.5 text-slate-400" />
+                  <span>
+                    {issue.assignedVendorName ? (
+                      <span className="inline-flex items-center gap-1.5">
+                        <span>{issue.assignedVendorName}</span>
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold font-mono bg-amber-500/10 text-amber-600 uppercase border border-amber-500/10">
+                          {issue.allotmentType === 'automatic' ? 'Auto' : 'Manual'}
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="text-slate-400 italic">Awaiting allotment</span>
+                    )}
+                  </span>
+                </span>
+              </div>
+
               <div className="flex items-center justify-between font-sans text-xs border-t border-slate-100 dark:border-slate-850 pt-2.5">
                 <span className="text-slate-400">Audited Resolution Cost</span>
                 <span className="font-mono font-bold text-slate-900 dark:text-white flex items-center">
@@ -554,6 +604,22 @@ export default function IssueDetails({
                     onChange={(e) => setOfficerTimeline(e.target.value)}
                     className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 text-xs text-slate-900 dark:text-white outline-none focus:border-blue-500 transition-all"
                   />
+                </div>
+
+                <div className="space-y-1">
+                  <label className="font-sans text-[10px] font-bold text-slate-500 dark:text-slate-400">
+                    Allot Contractor Vendor (Manual override)
+                  </label>
+                  <select
+                    value={selectedVendorId}
+                    onChange={(e) => setSelectedVendorId(e.target.value)}
+                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950 py-2 px-3 text-xs text-slate-900 dark:text-white outline-none focus:border-blue-500 transition-all"
+                  >
+                    <option value="">-- No Vendor Assigned --</option>
+                    {vendorsList.map(v => (
+                      <option key={v.id} value={v.id}>{v.name}</option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="space-y-1">
