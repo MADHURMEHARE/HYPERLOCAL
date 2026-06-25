@@ -22,7 +22,9 @@ import {
   Sparkles,
   Award,
   UserCheck,
-  Briefcase
+  Briefcase,
+  Play,
+  Pause
 } from 'lucide-react';
 import LoginRegister from './LoginRegister';
 
@@ -33,6 +35,20 @@ interface LandingPageProps {
 }
 
 export default function LandingPage({ onNavigate, user, onLoginSuccess }: LandingPageProps) {
+  const [isPlaying, setIsPlaying] = React.useState(true);
+  const videoRef = React.useRef<HTMLVideoElement>(null);
+
+  const toggleVideo = () => {
+    if (videoRef.current) {
+      if (isPlaying) {
+        videoRef.current.pause();
+      } else {
+        videoRef.current.play().catch(e => console.log(e));
+      }
+      setIsPlaying(!isPlaying);
+    }
+  };
+
   const stats = [
     { label: 'Active Citizen Heroes', value: '14,820', icon: Users, color: 'text-blue-500 bg-blue-50 dark:bg-blue-950/30' },
     { label: 'Incidents Fully Resolved', value: '9,412', icon: CheckCircle, color: 'text-emerald-500 bg-emerald-50 dark:bg-emerald-950/30' },
@@ -153,6 +169,22 @@ export default function LandingPage({ onNavigate, user, onLoginSuccess }: Landin
 
   return (
     <div className="relative overflow-hidden bg-slate-50 dark:bg-[#070A13] transition-colors duration-300 min-h-screen pb-16">
+      {/* Background Video Block for Smart City / Infrastructure Topic */}
+      <div className="absolute top-0 left-0 w-full h-[660px] sm:h-[720px] lg:h-[840px] overflow-hidden pointer-events-none z-0">
+        <video
+          ref={videoRef}
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="w-full h-full object-cover opacity-[0.08] dark:opacity-[0.14] transition-opacity duration-1000 scale-102"
+        >
+          <source src="https://assets.mixkit.co/videos/preview/mixkit-high-angle-view-of-a-busy-city-intersection-40011-large.mp4" type="video/mp4" />
+        </video>
+        {/* Soft elegant gradient overlays to fade out the video and ensure text readability */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-50/50 to-slate-50 dark:via-[#070A13]/55 dark:to-[#070A13]" />
+      </div>
+
       {/* Background Glow */}
       <motion.div 
         animate={{ 
@@ -161,7 +193,7 @@ export default function LandingPage({ onNavigate, user, onLoginSuccess }: Landin
           y: [0, -15, 15, 0]
         }}
         transition={{ duration: 15, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-0 left-1/4 h-96 w-96 rounded-full bg-blue-500/10 blur-3xl pointer-events-none" 
+        className="absolute top-0 left-1/4 h-96 w-96 rounded-full bg-blue-500/10 blur-3xl pointer-events-none z-10" 
       />
       <motion.div 
         animate={{ 
@@ -170,11 +202,11 @@ export default function LandingPage({ onNavigate, user, onLoginSuccess }: Landin
           y: [0, 20, -10, 0]
         }}
         transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-1/3 right-1/4 h-96 w-96 rounded-full bg-emerald-500/5 blur-3xl pointer-events-none" 
+        className="absolute top-1/3 right-1/4 h-96 w-96 rounded-full bg-emerald-500/5 blur-3xl pointer-events-none z-10" 
       />
 
       {/* Hero Section */}
-      <div className="mx-auto max-w-7xl px-4 pt-16 sm:px-6 lg:px-8 lg:pt-24">
+      <div className="relative mx-auto max-w-7xl px-4 pt-16 sm:px-6 lg:px-8 lg:pt-24 z-10">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           
           {/* Hero Left Text */}
@@ -218,6 +250,32 @@ export default function LandingPage({ onNavigate, user, onLoginSuccess }: Landin
               >
                 View Live Incident Map
               </motion.button>
+            </motion.div>
+
+            {/* Ambient motion controller */}
+            <motion.div variants={itemVariants} className="flex items-center space-x-2.5 pt-1.5">
+              <button
+                onClick={toggleVideo}
+                className="flex items-center space-x-2 text-[10.5px] font-bold font-mono tracking-wide text-slate-400 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 transition-colors cursor-pointer bg-slate-100/50 dark:bg-slate-900/30 px-3.5 py-1.5 rounded-full border border-slate-200/40 dark:border-slate-800/30 shadow-xs"
+                title="Toggle background ambient video loop"
+              >
+                {isPlaying ? (
+                  <>
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                    </span>
+                    <Pause className="h-3 w-3" />
+                    <span>Pause Ambient Motion</span>
+                  </>
+                ) : (
+                  <>
+                    <span className="h-2 w-2 rounded-full bg-slate-300 dark:bg-slate-750" />
+                    <Play className="h-3 w-3" />
+                    <span>Play Ambient Motion</span>
+                  </>
+                )}
+              </button>
             </motion.div>
           </motion.div>
 
