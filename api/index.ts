@@ -1,17 +1,11 @@
-/**
- * @license
- * SPDX-License-Identifier: Apache-2.0
- */
-
 import express from 'express';
 import dotenv from 'dotenv';
-import apiRouter from './server/routes';
+import apiRouter from '../server/routes';
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
-const PORT = 3000;
 
 // Set up larger limits for base64 image uploads (crucial for AI Vision)
 app.use(express.json({ limit: '15mb' }));
@@ -26,4 +20,5 @@ app.use((req, res, next) => {
 // Mount consolidated API router under /api
 app.use('/api', apiRouter);
 
+// Export the Express app as a Vercel Serverless Function
 export default app;
