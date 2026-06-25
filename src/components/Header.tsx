@@ -25,7 +25,8 @@ import {
   BarChart3,
   Bot,
   Search,
-  Briefcase
+  Briefcase,
+  BookOpen
 } from 'lucide-react';
 import { User, Notification } from '../types';
 
@@ -149,6 +150,22 @@ export default function Header({
 
         {/* Desktop Navigation Links */}
         <nav className="hidden lg:flex items-center space-x-1">
+          {!user && (
+            <button
+              onClick={() => onNavigate('about')}
+              className={`relative flex items-center space-x-1.5 rounded-full px-4 py-1.5 font-sans text-[11.5px] font-bold transition-all duration-300 cursor-pointer ${
+                currentView === 'about'
+                  ? 'bg-blue-50/70 border border-blue-200/80 text-blue-600 dark:bg-cyan-950/20 dark:border-cyan-500/25 dark:text-cyan-300'
+                  : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50/50 dark:hover:bg-slate-800/20 border border-transparent'
+              }`}
+            >
+              <BookOpen className="h-3.5 w-3.5" />
+              <span>About Us</span>
+              {currentView === 'about' && (
+                <span className="absolute -bottom-1.5 left-1/2 -translate-x-1/2 w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
+              )}
+            </button>
+          )}
           {visibleMenuItems.map((item) => {
             const Icon = item.icon;
             const isActive = currentView === item.view;
@@ -475,16 +492,28 @@ export default function Header({
                 <span>Sign Out Account</span>
               </button>
             ) : (
-              <button
-                id="mobile_nav_signin"
-                onClick={() => {
-                  setShowMobileMenu(false);
-                  onNavigate('login');
-                }}
-                className="flex w-full items-center justify-center space-x-2 rounded-xl bg-blue-600 py-3 text-center text-xs font-extrabold text-white shadow-lg shadow-blue-500/10 mt-2"
-              >
-                <span>Sign In Account</span>
-              </button>
+              <div className="space-y-2 mt-2 pt-3 border-t border-slate-150 dark:border-slate-800">
+                <button
+                  onClick={() => {
+                    setShowMobileMenu(false);
+                    onNavigate('about');
+                  }}
+                  className="flex w-full items-center space-x-3 rounded-xl px-4 py-3 text-left text-xs font-bold text-slate-600 dark:text-slate-350 hover:bg-slate-50 dark:hover:bg-slate-850"
+                >
+                  <BookOpen className="h-4.5 w-4.5 text-slate-450" />
+                  <span>About Us Mission</span>
+                </button>
+                <button
+                  id="mobile_nav_signin"
+                  onClick={() => {
+                    setShowMobileMenu(false);
+                    onNavigate('login');
+                  }}
+                  className="flex w-full items-center justify-center space-x-2 rounded-xl bg-blue-600 py-3 text-center text-xs font-extrabold text-white shadow-lg shadow-blue-500/10"
+                >
+                  <span>Sign In Account</span>
+                </button>
+              </div>
             )}
           </div>
         </div>

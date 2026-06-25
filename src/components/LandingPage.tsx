@@ -20,7 +20,9 @@ import {
   Quote,
   BookOpen,
   Sparkles,
-  Award
+  Award,
+  UserCheck,
+  Briefcase
 } from 'lucide-react';
 import LoginRegister from './LoginRegister';
 
@@ -469,6 +471,191 @@ export default function LandingPage({ onNavigate, user, onLoginSuccess }: Landin
               </div>
             </motion.div>
           ))}
+        </motion.div>
+      </div>
+
+      {/* Interactive Platform Guides for Citizens & Vendors */}
+      <div className="mx-auto max-w-7xl px-4 mt-28 sm:px-6 lg:px-8">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-50px" }}
+          transition={{ duration: 0.5 }}
+          className="text-center max-w-2xl mx-auto space-y-3 mb-12"
+        >
+          <div className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500">
+            <BookOpen className="h-4.5 w-4.5" />
+          </div>
+          <h2 className="font-display text-3xl font-bold tracking-tight text-slate-950 dark:text-white">
+            How to Use CommunityHero
+          </h2>
+          <p className="font-sans text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+            Whether you are a local resident reporting hazards or an authorized vendor repairing municipal faults, our system ensures smooth collaboration.
+          </p>
+        </motion.div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+          
+          {/* Citizen Guide Card */}
+          <motion.div 
+            initial={{ opacity: 0, x: -25 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.5, type: 'spring', stiffness: 80 }}
+            className="rounded-3xl border border-slate-200/50 dark:border-slate-800/60 bg-white dark:bg-slate-900/60 p-6 sm:p-8 text-left space-y-6 shadow-sm hover:border-blue-500/25 transition-all duration-300"
+          >
+            <div className="flex items-center space-x-3.5">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 dark:bg-blue-955/30 text-blue-600 dark:text-cyan-400 shadow-sm">
+                <UserCheck className="h-5.5 w-5.5" />
+              </div>
+              <div>
+                <h3 className="font-display font-extrabold text-lg text-slate-950 dark:text-white leading-tight">
+                  Citizen Path
+                </h3>
+                <span className="text-[10px] text-blue-600 dark:text-cyan-400 font-mono uppercase font-bold tracking-wider">
+                  Report, verify & claim rewards
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-4 pt-1">
+              <div className="flex items-start space-x-3.5">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-955/60 text-xs font-bold text-blue-600 dark:text-cyan-400 font-mono mt-0.5">
+                  1
+                </span>
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-slate-200 leading-none">Snap a Photo of the Hazard</h4>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed mt-1">Found a pothole, leak, or fallen street sign? Snap a quick photo with your phone and upload it.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-3.5">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-955/60 text-xs font-bold text-blue-600 dark:text-cyan-400 font-mono mt-0.5">
+                  2
+                </span>
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-slate-200 leading-none">AI Instant Diagnosis</h4>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed mt-1">Our server-side Gemini Vision scans the photo to extract details, predict cost, and score hazard severity instantly.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-3.5">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-955/60 text-xs font-bold text-blue-600 dark:text-cyan-400 font-mono mt-0.5">
+                  3
+                </span>
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-slate-200 leading-none">Support & Collaborate</h4>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed mt-1">Upvote other tickets, add status checks, and confirm whether independent vendor crews performed quality repairs.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-3.5">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-50 dark:bg-blue-955/60 text-xs font-bold text-blue-600 dark:text-cyan-400 font-mono mt-0.5">
+                  4
+                </span>
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-slate-200 leading-none">Collect XP & Badges</h4>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed mt-1">Unlock achievement badges on your profile, accumulate XP, and top your local ward leaderboard!</p>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => onNavigate('login')}
+              className="w-full flex items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs py-3 transition-all duration-200 cursor-pointer shadow-md shadow-blue-500/10 active:scale-98"
+            >
+              Sign In as Citizen Hero
+            </button>
+          </motion.div>
+
+          {/* Vendor Guide Card */}
+          <motion.div 
+            initial={{ opacity: 0, x: 25 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.5, type: 'spring', stiffness: 80 }}
+            className="rounded-3xl border border-slate-200/50 dark:border-slate-800/60 bg-white dark:bg-slate-900/60 p-6 sm:p-8 text-left space-y-6 shadow-sm hover:border-emerald-500/25 transition-all duration-300"
+          >
+            <div className="flex items-center space-x-3.5">
+              <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-50 dark:bg-emerald-955/30 text-emerald-600 dark:text-emerald-400 shadow-sm">
+                <Briefcase className="h-5.5 w-5.5" />
+              </div>
+              <div>
+                <h3 className="font-display font-extrabold text-lg text-slate-950 dark:text-white leading-tight">
+                  Vendor Path
+                </h3>
+                <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono uppercase font-bold tracking-wider">
+                  Bidding, dispatch & verify repairs
+                </span>
+              </div>
+            </div>
+
+            <div className="space-y-4 pt-1">
+              <div className="flex items-start space-x-3.5">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-955/60 text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono mt-0.5">
+                  1
+                </span>
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-slate-200 leading-none">Review Open Ward Tenders</h4>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed mt-1">Inspect municipal work assignments created by ward officers. Review severity, photos, and estimated budgets.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-3.5">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-955/60 text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono mt-0.5">
+                  2
+                </span>
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-slate-200 leading-none">Submit Estimates</h4>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed mt-1">Offer transparent, competitive bids. Receive direct digitized work orders with instant GPS locations.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-3.5">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-955/60 text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono mt-0.5">
+                  3
+                </span>
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-slate-200 leading-none">Log Worksite Progress</h4>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed mt-1">Update tasks in real-time from the job site. Keep residents and ward inspectors informed on each repair stage.</p>
+                </div>
+              </div>
+
+              <div className="flex items-start space-x-3.5">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-50 dark:bg-emerald-955/60 text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono mt-0.5">
+                  4
+                </span>
+                <div>
+                  <h4 className="text-xs font-bold text-slate-900 dark:text-slate-200 leading-none">Proof of Repair Completion</h4>
+                  <p className="text-[11px] text-slate-400 dark:text-slate-500 leading-relaxed mt-1">Upload photogrammetric repair evidence. Inspector audits and public crowdsource votes boost your Trust Score.</p>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={() => onNavigate('login')}
+              className="w-full flex items-center justify-center rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-3 transition-all duration-200 cursor-pointer shadow-md shadow-emerald-500/10 active:scale-98"
+            >
+              Sign In as Authorized Vendor
+            </button>
+          </motion.div>
+
+        </div>
+
+        {/* Learn More / About link Call-to-action */}
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="mt-12 flex justify-center"
+        >
+          <button
+            onClick={() => onNavigate('about')}
+            className="inline-flex items-center space-x-2 rounded-full border border-slate-200 dark:border-slate-800 bg-white/50 dark:bg-slate-900/40 px-6 py-3 text-xs font-bold text-slate-700 dark:text-slate-350 shadow-xs hover:bg-slate-50 dark:hover:bg-slate-850 transition-all cursor-pointer hover:shadow-md active:scale-98"
+          >
+            <span>Learn More About Our Mission</span>
+            <ArrowRight className="h-4 w-4" />
+          </button>
         </motion.div>
       </div>
 

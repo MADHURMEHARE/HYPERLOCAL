@@ -144,6 +144,14 @@ export default function Footer({ onNavigate, currentUser }: FooterProps) {
                 </button>
               </li>
               <li>
+                <button 
+                  onClick={() => onNavigate('about')} 
+                  className="text-slate-400 hover:text-white transition-colors cursor-pointer block text-left"
+                >
+                  About CommunityHero
+                </button>
+              </li>
+              <li>
                 <span className="text-slate-500 cursor-default block">
                   Municipal API docs
                 </span>

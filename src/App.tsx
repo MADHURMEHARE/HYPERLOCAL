@@ -7,7 +7,9 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, useNavigate, useLocation, useParams, Navigate } from 'react-router-dom';
 import Header from './components/Header';
 import Footer from './components/Footer';
+import Sidebar from './components/Sidebar';
 import LandingPage from './components/LandingPage';
+import AboutPage from './components/AboutPage';
 import LoginRegister from './components/LoginRegister';
 import CitizenDashboard from './components/CitizenDashboard';
 import ReportIssue from './components/ReportIssue';
@@ -208,6 +210,7 @@ function AppContent() {
     } else {
       setPrefilledLocation(null);
       if (view === 'landing') navigate('/');
+      else if (view === 'about') navigate('/about');
       else if (view === 'login') navigate('/login');
       else if (view === 'citizen-dashboard') navigate('/citizen-dashboard');
       else if (view === 'officer-dashboard') navigate('/officer-dashboard');
@@ -521,22 +524,35 @@ function AppContent() {
     }
   };
 
+  const isInsideRole = currentUser !== null;
+
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
+    <div className={`min-h-screen ${isInsideRole ? 'flex flex-col lg:flex-row animate-fade-in' : 'flex flex-col'} bg-slate-50 dark:bg-slate-950 transition-colors duration-300`}>
       
-      {/* Navigation Header - Always visible */}
-      <Header
-        user={currentUser}
-        notifications={notifications}
-        darkMode={theme === 'dark'}
-        setDarkMode={(dark) => setTheme(dark ? 'dark' : 'light')}
-        onNavigate={handleNavigate}
-        onLogout={handleLogout}
-        currentView={currentView}
-      />
+      {isInsideRole ? (
+        <Sidebar
+          user={currentUser}
+          notifications={notifications}
+          darkMode={theme === 'dark'}
+          setDarkMode={(dark) => setTheme(dark ? 'dark' : 'light')}
+          onNavigate={handleNavigate}
+          onLogout={handleLogout}
+          currentView={currentView}
+        />
+      ) : (
+        <Header
+          user={currentUser}
+          notifications={notifications}
+          darkMode={theme === 'dark'}
+          setDarkMode={(dark) => setTheme(dark ? 'dark' : 'light')}
+          onNavigate={handleNavigate}
+          onLogout={handleLogout}
+          currentView={currentView}
+        />
+      )}
 
       {/* Primary Layout Router Switch */}
-      <main className="flex-1 shrink-0">
+      <main className={`flex-1 shrink-0 min-w-0 ${isInsideRole ? 'lg:h-screen lg:overflow-y-auto' : ''}`}>
         <Routes>
           {/* Landing / Homepage Route */}
           <Route path="/" element={
@@ -544,6 +560,14 @@ function AppContent() {
               onNavigate={handleNavigate} 
               user={currentUser} 
               onLoginSuccess={handleLogin} 
+            />
+          } />
+
+          {/* About Us Route */}
+          <Route path="/about" element={
+            <AboutPage 
+              onNavigate={handleNavigate} 
+              user={currentUser} 
             />
           } />
 
@@ -707,8 +731,10 @@ function AppContent() {
         </Routes>
       </main>
 
-      {/* Footer - Always visible */}
-      <Footer onNavigate={handleNavigate} currentUser={currentUser} />
+      {/* Footer - Only visible when not logged in */}
+      {!isInsideRole && (
+        <Footer onNavigate={handleNavigate} currentUser={currentUser} />
+      )}
 
     </div>
   );
