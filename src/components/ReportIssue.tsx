@@ -357,6 +357,8 @@ export default function ReportIssue({
       aiConfidence: aiConfidence || 80,
       estimatedImpact
     };
+
+
 try {
   const token = localStorage.getItem("hero_token");
 
@@ -364,7 +366,7 @@ try {
     setError("Please log in again.");
     return;
   }
-try{
+
   const res = await fetch("/api/issues", {
     method: "POST",
     headers: {
@@ -382,13 +384,11 @@ try{
   } else {
     setError(newIssue.error || "Submission failed.");
   }
-
-} catch (err) {   // ✅ try block closed
+} catch (err) {
   setError("Failed to transmit ticket to municipal server.");
 } finally {
   setIsSubmitting(false);
 }
-
   // Map click coordinate handler
   const handleMapClick = (clickedLat: number, clickedLng: number) => {
     setLat(clickedLat);
