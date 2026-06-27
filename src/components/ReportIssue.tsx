@@ -388,7 +388,9 @@ try {
   setError("Failed to transmit ticket to municipal server.");
 } finally {
   setIsSubmitting(false);
-}
+  }
+
+  }
   // Map click coordinate handler
   const handleMapClick = (clickedLat: number, clickedLng: number) => {
     setLat(clickedLat);
