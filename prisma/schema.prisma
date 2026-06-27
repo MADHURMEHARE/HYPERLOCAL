@@ -1,0 +1,80 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String   @id
+  name         String
+  email        String   @unique
+  role         String   // 'citizen' | 'officer' | 'admin' | 'vendor'
+  points       Int      @default(0)
+  badges       String[] @default(["Community Hero"])
+  ward         String?
+  state        String?
+  avatar       String?
+  createdAt    DateTime @default(now())
+  passwordHash String?
+}
+
+model Issue {
+  id                  String   @id
+  title               String
+  description         String
+  category            String   // IssueCategory
+  severity            String   // 'Critical' | 'High' | 'Medium' | 'Low'
+  status              String   // IssueStatus
+  lat                 Float
+  lng                 Float
+  address             String
+  ward                String?
+  imageUrl            String?
+  videoUrl            String?
+  upvotes             Int      @default(0)
+  verifiedBy          String[] // List of user IDs who verified
+  aiConfidence        Int      @default(0)
+  verificationScore   Int      @default(0)
+  priority            String   // IssuePriority
+  estimatedImpact     Int      @default(0)
+  assignedOfficerId   String?
+  assignedOfficerName String?
+  assignedVendorId    String?
+  assignedVendorName  String?
+  allotmentType       String?  // 'automatic' | 'manual'
+  costEstimate        Float?
+  resolutionTimeline  String?
+  createdBy           String
+  creatorName         String
+  creatorAvatar       String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+  progressUpdates     Json     // Array of ProgressUpdate objects [{status, note, updatedBy, updatedAt, photoUrl}]
+  publicCommentsCount Int      @default(0)
+  isDuplicateOf       String?
+}
+
+model Comment {
+  id            String   @id
+  issueId       String
+  userId        String
+  userName      String
+  userAvatar    String?
+  content       String
+  evidencePhoto String?
+  createdAt     DateTime @default(now())
+}
+
+model Notification {
+  id        String   @id
+  userId    String
+  title     String
+  message   String
+  type      String   // 'info' | 'success' | 'warning' | 'alert'
+  isRead    Boolean  @default(false)
+  issueId   String?
+  createdAt DateTime @default(now())
+}
