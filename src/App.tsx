@@ -60,57 +60,7 @@ function AppContent() {
   }, [theme]);
 
   // Load Initial Data from Full-Stack Express Server or Fallbacks
-  useEffect(() => {
-    const fetchData = async () => {
-      let activeUser: User | null = null;
-      const storedToken = localStorage.getItem('hero_token');
-
-      if (storedToken) {
-        try {
-          const verifyRes = await fetch('/api/auth/me', {
-            headers: { 'Authorization': `Bearer ${storedToken}` }
-          });
-          if (verifyRes.ok) {
-            const verifyData = await verifyRes.json();
-            if (verifyData.success) {
-              activeUser = verifyData.user;
-              setCurrentUser(verifyData.user);
-            }
-          } else {
-            localStorage.removeItem('hero_token');
-          }
-        } catch (e) {
-          console.warn("Express JWT verification failed, continuing in guest mode.", e);
-        }
-      }
-
-      try {
-        const headers: Record<string, string> = {};
-        if (storedToken) {
-          headers['Authorization'] = `Bearer ${storedToken}`;
-        }
-
-        const [issuesRes, commentsRes, predictionsRes, usersRes, leaderRes, notifyRes] = await Promise.all([
-          fetch('/api/issues', { headers }),
-          fetch('/api/comments', { headers }),
-          fetch('/api/predictions', { headers }),
-          fetch('/api/users', { headers }),
-          fetch('/api/leaderboard', { headers }),
-          fetch(activeUser ? `/api/notifications/${activeUser.id}` : '/api/notifications', { headers })
-        ]);
-
-        if (issuesRes.ok) setIssues(await issuesRes.json());
-        if (commentsRes.ok) setComments(await commentsRes.json());
-        if (predictionsRes.ok) setPredictions(await predictionsRes.json());
-        if (usersRes.ok) setUsersList(await usersRes.json());
-        if (leaderRes.ok) setLeaderboard(await leaderRes.json());
-        if (notifyRes.ok) setNotifications(await notifyRes.json());
-      } catch (err) {
-        console.warn("Express endpoint connections unavailable. Bootstrapping client state.", err);
-      }
-    };
-    fetchData();
-  }, []);
+  
 
   // Shared function to manually or automatically synchronize state with municipal ledger
   const handleRefreshData = async () => {
