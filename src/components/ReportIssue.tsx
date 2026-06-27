@@ -357,31 +357,37 @@ export default function ReportIssue({
       aiConfidence: aiConfidence || 80,
       estimatedImpact
     };
+try {
+  const token = localStorage.getItem("hero_token");
 
-    const token = localStorage.getItem("hero_token");
+  if (!token) {
+    setError("Please log in again.");
+    return;
+  }
 
-const res = await fetch("/api/issues", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-    "Authorization": `Bearer ${token}`,
-  },
-  body: JSON.stringify(payload),
-});
-      const newIssue = await res.json();
-      
-      if (res.ok) {
-        onIssueCreated(newIssue);
-        onNavigate('citizen-dashboard');
-      } else {
-        setError(newIssue.error || 'Submission failed.');
-      }
-    } catch (err) {
-      setError('Failed to transmit ticket to municipal server.');
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
+  const res = await fetch("/api/issues", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const newIssue = await res.json();
+
+  if (res.ok) {
+    onIssueCreated(newIssue);
+    onNavigate("citizen-dashboard");
+  } else {
+    setError(newIssue.error || "Submission failed.");
+  }
+
+} catch (err) {   // ✅ try block closed
+  setError("Failed to transmit ticket to municipal server.");
+} finally {
+  setIsSubmitting(false);
+}
 
   // Map click coordinate handler
   const handleMapClick = (clickedLat: number, clickedLng: number) => {
