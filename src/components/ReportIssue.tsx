@@ -364,7 +364,7 @@ try {
     setError("Please log in again.");
     return;
   }
-
+try{
   const res = await fetch("/api/issues", {
     method: "POST",
     headers: {
