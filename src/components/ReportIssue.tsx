@@ -22,7 +22,9 @@ import {
   CheckCircle2,
   AlertCircle,
   ArrowLeft,
-  Settings
+  Settings,
+  LocateFixed,
+  Loader2
 } from 'lucide-react';
 import { IssueCategory, IssueLocation, IssuePriority } from '../types';
 import { MapContainer, TileLayer, Marker, useMap, useMapEvents } from 'react-leaflet';
@@ -72,7 +74,7 @@ interface ReportIssueProps {
   userId: string;
   userName: string;
   userAvatar?: string;
-  onIssueCreated: (newIssue: any) => void;api
+  onIssueCreated: (newIssue: any) => void;
   onNavigate: (view: string, issueId?: string) => void;
   prefilledLocation?: { lat: number; lng: number; address?: string; ward?: string } | null;
 }
@@ -96,6 +98,9 @@ export default function ReportIssue({
   const [lat, setLat] = useState(prefilledLocation?.lat || 37.7833);
   const [lng, setLng] = useState(prefilledLocation?.lng || -122.4167);
   const [ward, setWard] = useState(prefilledLocation?.ward || 'Ward 5 - Heights');
+  const [isLocating, setIsLocating] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  const [mapZoom, setMapZoom] = useState(14);
 
   useEffect(() => {
     if (prefilledLocation) {
@@ -424,6 +429,48 @@ try {
         const generatedWard = wards[Math.floor(Math.abs(clickedLng * 1000) % wards.length)];
         setWard(generatedWard);
       });
+  };
+
+  // Use the device's GPS / network location (mobile + desktop browsers)
+  const handleUseMyLocation = () => {
+    setLocationError(null);
+
+    if (!('geolocation' in navigator)) {
+      setLocationError('Geolocation is not supported by this browser. Please pin your location on the map instead.');
+      return;
+    }
+
+    setIsLocating(true);
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        setMapZoom(16); // zoom in tighter since we now have a precise GPS fix
+        handleMapClick(latitude, longitude); // reuse existing reverse-geocode + fallback logic
+        setIsLocating(false);
+      },
+      (geoError) => {
+        setIsLocating(false);
+        switch (geoError.code) {
+          case geoError.PERMISSION_DENIED:
+            setLocationError('Location access was denied. Enable it in your browser/device settings, or drop a pin on the map.');
+            break;
+          case geoError.POSITION_UNAVAILABLE:
+            setLocationError('Your current location could not be determined. Please drop a pin on the map.');
+            break;
+          case geoError.TIMEOUT:
+            setLocationError('Location request timed out. Please try again or drop a pin on the map.');
+            break;
+          default:
+            setLocationError('Unable to fetch your location. Please drop a pin on the map.');
+        }
+      },
+      {
+        enableHighAccuracy: true, // prefer GPS chip over coarse network/IP location on mobile
+        timeout: 10000,
+        maximumAge: 0
+      }
+    );
   };
 
   return (
@@ -962,18 +1009,44 @@ try {
 
                 {/* Map pinning block (Step 3) */}
                 <div className="space-y-3 pt-3 border-t border-slate-150 dark:border-slate-850">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
                     <label className="font-sans text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1">
                       <MapPin className="h-3.5 w-3.5 text-rose-500" />
                       Step 3: Geolocation coordinates
                     </label>
-                    <span className="text-[9px] text-slate-400">Click map to drop marker</span>
+                    <button
+                      type="button"
+                      onClick={handleUseMyLocation}
+                      disabled={isLocating}
+                      className="inline-flex items-center gap-1.5 rounded-lg border border-blue-200 dark:border-blue-900/50 bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/40 dark:hover:bg-blue-950/70 px-2.5 py-1.5 text-[10px] font-bold text-blue-700 dark:text-blue-400 transition-all cursor-pointer disabled:opacity-60 disabled:cursor-wait"
+                    >
+                      {isLocating ? (
+                        <>
+                          <Loader2 className="h-3 w-3 animate-spin" />
+                          Locating...
+                        </>
+                      ) : (
+                        <>
+                          <LocateFixed className="h-3 w-3" />
+                          Use My Location
+                        </>
+                      )}
+                    </button>
                   </div>
+
+                  {locationError && (
+                    <div className="flex items-start gap-2 p-2.5 bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 text-amber-700 dark:text-amber-400 text-[11px] rounded-xl">
+                      <AlertTriangle className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+                      <span>{locationError}</span>
+                    </div>
+                  )}
+
+                  <p className="text-[9px] text-slate-400">Tap "Use My Location" on your phone, or click anywhere on the map to drop a marker manually.</p>
 
                   <div className="relative h-48 w-full rounded-2xl border border-slate-200 dark:border-slate-850 overflow-hidden shadow-inner z-10">
                     <MapContainer
                       center={[lat, lng]}
-                      zoom={14}
+                      zoom={mapZoom}
                       scrollWheelZoom={true}
                       style={{ width: '100%', height: '100%' }}
                     >
@@ -981,7 +1054,7 @@ try {
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                       />
-                      <MapController center={[lat, lng]} zoom={14} />
+                      <MapController center={[lat, lng]} zoom={mapZoom} />
                       <MapEvents onMapClick={handleMapClick} />
                       <Marker position={[lat, lng]} icon={createDroppedPinIcon()} />
                     </MapContainer>
