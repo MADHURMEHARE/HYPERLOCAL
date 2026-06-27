@@ -72,7 +72,7 @@ interface ReportIssueProps {
   userId: string;
   userName: string;
   userAvatar?: string;
-  onIssueCreated: (newIssue: any) => void;
+  onIssueCreated: (newIssue: any) => void;api
   onNavigate: (view: string, issueId?: string) => void;
   prefilledLocation?: { lat: number; lng: number; address?: string; ward?: string } | null;
 }
@@ -358,12 +358,16 @@ export default function ReportIssue({
       estimatedImpact
     };
 
-    try {
-      const res = await fetch('/api/issues', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload)
-      });
+    const token = localStorage.getItem("hero_token");
+
+const res = await fetch("/api/issues", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    "Authorization": `Bearer ${token}`,
+  },
+  body: JSON.stringify(payload),
+});
       const newIssue = await res.json();
       
       if (res.ok) {
