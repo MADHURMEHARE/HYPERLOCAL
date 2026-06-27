@@ -1,16 +1,17 @@
 import { Router } from 'express';
 import { IssueController } from '../controllers/IssueController';
+import { authMiddleware } from '../middlewares/authMiddleware';
 
 const router = Router();
 
 router.get('/', IssueController.getAll);
-router.post('/', IssueController.create);
+router.post('/', authMiddleware, IssueController.create);
 router.get('/:id', IssueController.getById);
-router.post('/:id/vote', IssueController.vote);
-router.post('/:id/verify', IssueController.verify);
-router.post('/:id/comment', IssueController.comment);
-router.put('/:id/status', IssueController.updateStatus);
-router.post('/:id/status', IssueController.updateStatus);
-router.post('/:id/delete', IssueController.delete);
+router.post('/:id/vote', authMiddleware, IssueController.vote);
+router.post('/:id/verify', authMiddleware, IssueController.verify);
+router.post('/:id/comment', authMiddleware, IssueController.comment);
+router.put('/:id/status', authMiddleware, IssueController.updateStatus);
+router.post('/:id/status', authMiddleware, IssueController.updateStatus);
+router.post('/:id/delete', authMiddleware, IssueController.delete);
 
 export default router;

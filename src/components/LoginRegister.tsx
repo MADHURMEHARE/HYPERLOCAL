@@ -12,7 +12,7 @@ interface LoginRegisterProps {
 }
 
 export default function LoginRegister({ onLoginSuccess }: LoginRegisterProps) {
-  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
+  const [authMode, setAuthMode] = useState<'signin' | 'signup' | 'forgot' | 'reset'>('signin');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -21,6 +21,8 @@ export default function LoginRegister({ onLoginSuccess }: LoginRegisterProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
+  const [resetCode, setResetCode] = useState('');
+  const [newPassword, setNewPassword] = useState('');
 
   const sanFranciscoWards = [
     'Ward 3 - Mission',
@@ -99,6 +101,71 @@ export default function LoginRegister({ onLoginSuccess }: LoginRegisterProps) {
     setError('');
     setSuccessMsg('');
 
+    if (authMode === 'forgot') {
+      if (!email) {
+        setError('Please provide your email address.');
+        return;
+      }
+      setIsLoading(true);
+      try {
+        const res = await fetch('/api/auth/forgot-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          setSuccessMsg(data.message || 'Verification code sent successfully!');
+          // Smoothly transfer to reset stage prefilling email
+          setTimeout(() => {
+            setAuthMode('reset');
+            setSuccessMsg('');
+          }, 1500);
+        } else {
+          setError(data.error || 'Failed to request password reset code.');
+        }
+      } catch (err) {
+        setError('Server connection error.');
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+
+    if (authMode === 'reset') {
+      if (!email || !resetCode || !newPassword) {
+        setError('All fields (Email, Verification Code, and New Password) are required.');
+        return;
+      }
+      setIsLoading(true);
+      try {
+        const res = await fetch('/api/auth/reset-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, code: resetCode, newPassword })
+        });
+        const data = await res.json();
+        if (res.ok && data.success) {
+          setSuccessMsg(data.message || 'Password updated successfully!');
+          setTimeout(() => {
+            setAuthMode('signin');
+            setError('');
+            setSuccessMsg('');
+            setPassword('');
+            setResetCode('');
+            setNewPassword('');
+          }, 2000);
+        } else {
+          setError(data.error || 'Failed to reset password.');
+        }
+      } catch (err) {
+        setError('Server connection error.');
+      } finally {
+        setIsLoading(false);
+      }
+      return;
+    }
+
     if (!email) {
       setError('Please provide an email.');
       return;
@@ -176,46 +243,71 @@ export default function LoginRegister({ onLoginSuccess }: LoginRegisterProps) {
                 <Shield className="h-4.5 w-4.5" />
               </div>
               <h2 className="font-display text-xl font-extrabold tracking-tight text-slate-950 dark:text-white sm:text-2xl">
-                {authMode === 'signin' ? 'Sign In' : 'Create Account'}
+                {authMode === 'signin' ? 'Sign In' : authMode === 'signup' ? 'Create Account' : authMode === 'forgot' ? 'Forgot Password' : 'Reset Password'}
               </h2>
               <p className="font-sans text-xs text-slate-400 dark:text-slate-500">
                 {authMode === 'signin' 
                   ? 'Access your authenticated local dashboard with secure JWT clearance.' 
-                  : 'Register a secure municipal profile. Password hashes are stored safely.'}
+                  : authMode === 'signup'
+                  ? 'Register a secure municipal profile. Password hashes are stored safely.'
+                  : authMode === 'forgot'
+                  ? 'Request a secure 6-digit verification code to reset your account password.'
+                  : 'Enter the 6-digit verification code sent to your email and choose a new password.'}
               </p>
             </div>
 
             {/* Mode Switcher Tabs */}
-            <div className="flex p-1 rounded-xl bg-slate-100 dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800/80">
-              <button
-                type="button"
-                onClick={() => {
-                  setAuthMode('signin');
-                  setError('');
-                }}
-                className={`flex-1 py-2 text-center text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                  authMode === 'signin'
-                    ? 'bg-white dark:bg-slate-900 shadow-sm text-blue-600 dark:text-blue-400 font-bold'
-                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
-                }`}
-              >
-                Sign In
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setAuthMode('signup');
-                  setError('');
-                }}
-                className={`flex-1 py-2 text-center text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                  authMode === 'signup'
-                    ? 'bg-white dark:bg-slate-900 shadow-sm text-blue-600 dark:text-blue-400 font-bold'
-                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
-                }`}
-              >
-                Sign Up
-              </button>
-            </div>
+            {(authMode === 'signin' || authMode === 'signup') ? (
+              <div className="flex p-1 rounded-xl bg-slate-100 dark:bg-slate-950 border border-slate-200/50 dark:border-slate-800/80">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode('signin');
+                    setError('');
+                    setSuccessMsg('');
+                  }}
+                  className={`flex-1 py-2 text-center text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                    authMode === 'signin'
+                      ? 'bg-white dark:bg-slate-900 shadow-sm text-blue-600 dark:text-blue-400 font-bold'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  Sign In
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode('signup');
+                    setError('');
+                    setSuccessMsg('');
+                  }}
+                  className={`flex-1 py-2 text-center text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                    authMode === 'signup'
+                      ? 'bg-white dark:bg-slate-900 shadow-sm text-blue-600 dark:text-blue-400 font-bold'
+                      : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+                  }`}
+                >
+                  Sign Up
+                </button>
+              </div>
+            ) : (
+              <div className="flex p-2 rounded-xl bg-blue-50/50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 items-center justify-between animate-fadeIn">
+                <span className="font-sans text-xs font-bold text-blue-700 dark:text-blue-400 pl-1.5">
+                  {authMode === 'forgot' ? 'Security Recovery Dispatcher' : 'Password Reset Verification'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuthMode('signin');
+                    setError('');
+                    setSuccessMsg('');
+                  }}
+                  className="px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200 cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
 
             {error && (
               <div className="rounded-xl bg-rose-50 dark:bg-rose-950/30 border border-rose-100 dark:border-rose-900/50 p-3.5 text-xs font-semibold text-rose-600 dark:text-rose-400">
@@ -229,127 +321,236 @@ export default function LoginRegister({ onLoginSuccess }: LoginRegisterProps) {
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {authMode === 'signup' && (
-                <div className="space-y-1.5 animate-fadeIn">
+            {(authMode === 'signin' || authMode === 'signup') ? (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {authMode === 'signup' && (
+                  <div className="space-y-1.5 animate-fadeIn">
+                    <label className="font-sans text-xs font-bold text-slate-500 dark:text-slate-400">
+                      Full Name
+                    </label>
+                    <div className="relative">
+                      <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                      <input
+                        type="text"
+                        required
+                        value={fullName}
+                        onChange={(e) => setFullName(e.target.value)}
+                        placeholder="Jane Doe"
+                        className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 py-2.5 pl-10.5 pr-4 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:border-blue-500 dark:focus:border-blue-500 transition-all"
+                      />
+                    </div>
+                  </div>
+                )}
+
+                <div className="space-y-1.5">
                   <label className="font-sans text-xs font-bold text-slate-500 dark:text-slate-400">
-                    Full Name
+                    Email Address
                   </label>
                   <div className="relative">
-                    <User className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                     <input
-                      type="text"
+                      type="email"
                       required
-                      value={fullName}
-                      onChange={(e) => setFullName(e.target.value)}
-                      placeholder="Jane Doe"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="name@example.com"
                       className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 py-2.5 pl-10.5 pr-4 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:border-blue-500 dark:focus:border-blue-500 transition-all"
                     />
                   </div>
                 </div>
-              )}
 
-              <div className="space-y-1.5">
-                <label className="font-sans text-xs font-bold text-slate-500 dark:text-slate-400">
-                  Email Address
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <input
-                    type="email"
-                    required
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="name@example.com"
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 py-2.5 pl-10.5 pr-4 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:border-blue-500 dark:focus:border-blue-500 transition-all"
-                  />
-                </div>
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="font-sans text-xs font-bold text-slate-500 dark:text-slate-400">
-                  Password
-                </label>
-                <div className="relative">
-                  <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <input
-                    type="password"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 py-2.5 pl-10.5 pr-4 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:border-blue-500 dark:focus:border-blue-500 transition-all"
-                  />
-                </div>
-              </div>
-
-              {authMode === 'signup' && (
-                <div className="space-y-4 animate-fadeIn">
-                  <div className="space-y-1.5">
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
                     <label className="font-sans text-xs font-bold text-slate-500 dark:text-slate-400">
-                      Local SF Ward
+                      Password
                     </label>
-                    <div className="relative">
-                      <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                      <select
-                        value={ward}
-                        onChange={(e) => setWard(e.target.value)}
-                        className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 py-2.5 pl-10.5 pr-4 text-xs text-slate-900 dark:text-white outline-none focus:border-blue-500 dark:focus:border-blue-500 transition-all appearance-none cursor-pointer"
+                    {authMode === 'signin' && (
+                      <button
+                        type="button"
+                        id="forgot-password-link"
+                        onClick={() => {
+                          setAuthMode('forgot');
+                          setError('');
+                          setSuccessMsg('');
+                        }}
+                        className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer"
                       >
-                        {sanFranciscoWards.map((w) => (
-                          <option key={w} value={w} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
-                            {w}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+                        Forgot Password?
+                      </button>
+                    )}
                   </div>
-
-                  {/* Security Clearance selection */}
-                  <div className="space-y-1.5">
-                    <label className="font-sans text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">
-                      Role / Clearance
-                    </label>
-                    <div className="grid grid-cols-4 gap-2">
-                      {(['citizen', 'officer', 'admin', 'vendor'] as UserRole[]).map((role) => (
-                        <button
-                          key={role}
-                          type="button"
-                          onClick={() => setSelectedRole(role)}
-                          className={`rounded-lg py-2 text-center font-mono text-[10px] font-bold uppercase border transition-all cursor-pointer ${
-                            selectedRole === role
-                              ? 'border-blue-600 bg-blue-500/10 text-blue-600 dark:border-blue-500 dark:text-blue-400'
-                              : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 text-slate-500 dark:text-slate-400'
-                          }`}
-                        >
-                          {role}
-                        </button>
-                      ))}
-                    </div>
+                  <div className="relative">
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <input
+                      type="password"
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 py-2.5 pl-10.5 pr-4 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:border-blue-500 dark:focus:border-blue-500 transition-all"
+                    />
                   </div>
                 </div>
-              )}
 
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="w-full flex items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-xs py-3 shadow-md shadow-blue-500/10 transition-all disabled:opacity-50 cursor-pointer"
-              >
-                {isLoading ? (
-                  'Verifying Security Seal...'
-                ) : authMode === 'signin' ? (
-                  <>
-                    Sign In Securing JWT
-                    <LogIn className="ml-1.5 h-4 w-4" />
-                  </>
-                ) : (
-                  <>
-                    Sign Up Secure Account
-                    <UserPlus className="ml-1.5 h-4 w-4" />
-                  </>
+                {authMode === 'signup' && (
+                  <div className="space-y-4 animate-fadeIn">
+                    <div className="space-y-1.5">
+                      <label className="font-sans text-xs font-bold text-slate-500 dark:text-slate-400">
+                        Local SF Ward
+                      </label>
+                      <div className="relative">
+                        <MapPin className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                        <select
+                          value={ward}
+                          onChange={(e) => setWard(e.target.value)}
+                          className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 py-2.5 pl-10.5 pr-4 text-xs text-slate-900 dark:text-white outline-none focus:border-blue-500 dark:focus:border-blue-500 transition-all appearance-none cursor-pointer"
+                        >
+                          {sanFranciscoWards.map((w) => (
+                            <option key={w} value={w} className="bg-white dark:bg-slate-900 text-slate-900 dark:text-white">
+                              {w}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Security Clearance selection */}
+                    <div className="space-y-1.5">
+                      <label className="font-sans text-xs font-bold text-slate-500 dark:text-slate-400 block mb-1">
+                        Role / Clearance
+                      </label>
+                      <div className="grid grid-cols-4 gap-2">
+                        {(['citizen', 'officer', 'admin', 'vendor'] as UserRole[]).map((role) => (
+                          <button
+                            key={role}
+                            type="button"
+                            onClick={() => setSelectedRole(role)}
+                            className={`rounded-lg py-2 text-center font-mono text-[10px] font-bold uppercase border transition-all cursor-pointer ${
+                              selectedRole === role
+                                ? 'border-blue-600 bg-blue-500/10 text-blue-600 dark:border-blue-500 dark:text-blue-400'
+                                : 'border-slate-200 dark:border-slate-800 hover:bg-slate-50 text-slate-500 dark:text-slate-400'
+                            }`}
+                          >
+                            {role}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
                 )}
-              </button>
-            </form>
+
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full flex items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-xs py-3 shadow-md shadow-blue-500/10 transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  {isLoading ? (
+                    'Verifying Security Seal...'
+                  ) : authMode === 'signin' ? (
+                    <>
+                      Sign In Securing JWT
+                      <LogIn className="ml-1.5 h-4 w-4" />
+                    </>
+                  ) : (
+                    <>
+                      Sign Up Secure Account
+                      <UserPlus className="ml-1.5 h-4 w-4" />
+                    </>
+                  )}
+                </button>
+              </form>
+            ) : authMode === 'forgot' ? (
+              <form onSubmit={handleSubmit} className="space-y-4 animate-fadeIn">
+                <div className="space-y-1.5">
+                  <label className="font-sans text-xs font-bold text-slate-500 dark:text-slate-400">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="name@example.com"
+                      className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 py-2.5 pl-10.5 pr-4 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:border-blue-500 dark:focus:border-blue-500 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  id="send-reset-code-btn"
+                  className="w-full flex items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-xs py-3 shadow-md shadow-blue-500/10 transition-all disabled:opacity-50 cursor-pointer animate-fadeIn"
+                >
+                  {isLoading ? 'Dispatching Verification Code...' : 'Send Verification Code'}
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-4 animate-fadeIn">
+                <div className="space-y-1.5">
+                  <label className="font-sans text-xs font-bold text-slate-500 dark:text-slate-400">
+                    Email Address
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="name@example.com"
+                      className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 py-2.5 pl-10.5 pr-4 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:border-blue-500 dark:focus:border-blue-500 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 animate-fadeIn">
+                  <label className="font-sans text-xs font-bold text-slate-500 dark:text-slate-400">
+                    6-Digit Code
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <input
+                      type="text"
+                      required
+                      value={resetCode}
+                      onChange={(e) => setResetCode(e.target.value)}
+                      placeholder="123456"
+                      maxLength={6}
+                      className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 py-2.5 pl-10.5 pr-4 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:border-blue-500 dark:focus:border-blue-500 transition-all text-center tracking-widest font-mono text-sm"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5 animate-fadeIn">
+                  <label className="font-sans text-xs font-bold text-slate-500 dark:text-slate-400">
+                    New Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <input
+                      type="password"
+                      required
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="w-full rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50 py-2.5 pl-10.5 pr-4 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none focus:border-blue-500 dark:focus:border-blue-500 transition-all"
+                    />
+                  </div>
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  id="reset-password-btn"
+                  className="w-full flex items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-xs py-3 shadow-md shadow-blue-500/10 transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  {isLoading ? 'Resetting Security Credentials...' : 'Reset Password'}
+                </button>
+              </form>
+            )}
           </div>
 
           <div className="pt-6 border-t border-slate-100 dark:border-slate-850/60 mt-6 text-center">

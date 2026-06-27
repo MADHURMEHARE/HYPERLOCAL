@@ -112,6 +112,57 @@ function AppContent() {
     fetchData();
   }, []);
 
+  // Shared function to manually or automatically synchronize state with municipal ledger
+  const handleRefreshData = async () => {
+    const storedToken = localStorage.getItem('hero_token');
+    const headers: Record<string, string> = {};
+    if (storedToken) {
+      headers['Authorization'] = `Bearer ${storedToken}`;
+    }
+
+    try {
+      const [issuesRes, commentsRes, usersRes, leaderRes, notifyRes] = await Promise.all([
+        fetch('/api/issues', { headers }),
+        fetch('/api/comments', { headers }),
+        fetch('/api/users', { headers }),
+        fetch('/api/leaderboard', { headers }),
+        fetch(currentUser ? `/api/notifications/${currentUser.id}` : '/api/notifications', { headers })
+      ]);
+
+      if (issuesRes.ok) setIssues(await issuesRes.json());
+      if (commentsRes.ok) setComments(await commentsRes.json());
+      if (usersRes.ok) {
+        const list = await usersRes.json();
+        setUsersList(list);
+        if (currentUser) {
+          const self = list.find((u: User) => u.id === currentUser.id);
+          if (self) {
+            // Only update state if points or badge lists have changed
+            if (self.points !== currentUser.points || JSON.stringify(self.badges) !== JSON.stringify(currentUser.badges)) {
+              setCurrentUser(self);
+            }
+          }
+        }
+      }
+      if (leaderRes.ok) setLeaderboard(await leaderRes.json());
+      if (notifyRes.ok) setNotifications(await notifyRes.json());
+    } catch (err) {
+      console.warn("Express data sync connection failed.", err);
+    }
+  };
+
+  // Periodically poll for updates to keep citizen/officer/vendor dashboards live
+  useEffect(() => {
+    if (!currentUser) return;
+
+    // Fetch initial fresh data and poll every 10 seconds
+    const pollInterval = setInterval(() => {
+      handleRefreshData();
+    }, 10000);
+
+    return () => clearInterval(pollInterval);
+  }, [currentUser]);
+
   // Set default view on user authentication change, maintaining compatibility for initial loading and deep links
   useEffect(() => {
     if (!currentUser) {
@@ -224,8 +275,37 @@ function AppContent() {
     }
   };
 
-  const handleReportIssue = async (newIssue: Partial<Issue>) => {
+  const handleReportIssue = async (newIssue: any) => {
     if (!currentUser) return;
+
+    // Check if newIssue is already the server response containing the full updated state
+    if (newIssue && (newIssue.success || newIssue.issues)) {
+      if (newIssue.issues) setIssues(newIssue.issues);
+      if (newIssue.users) {
+        setUsersList(newIssue.users);
+        const updatedUsr = newIssue.users.find((u: User) => u.id === currentUser.id);
+        if (updatedUsr) setCurrentUser(updatedUsr);
+      }
+      if (newIssue.leaderboard) {
+        setLeaderboard(newIssue.leaderboard);
+      }
+
+      // Add a notification
+      const reportedIssue = newIssue.issue || {};
+      const newNotif: AppNotification = {
+        id: 'notif_' + Math.random().toString(36).substr(2, 9),
+        userId: currentUser.id,
+        title: 'Ticket Logged!',
+        message: `Your report "${reportedIssue.title || 'Hazard'}" has been added. Earned 15 XP!`,
+        type: 'success',
+        isRead: false,
+        createdAt: new Date().toISOString()
+      };
+      setNotifications(prev => [newNotif, ...prev]);
+
+      navigate('/citizen-dashboard');
+      return;
+    }
 
     // Structure complete record payload
     const payload: Omit<Issue, 'id' | 'createdAt'> = {
@@ -266,9 +346,13 @@ function AppContent() {
     };
 
     try {
+      const storedToken = localStorage.getItem('hero_token') || '';
       const res = await fetch('/api/issues', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${storedToken}`
+        },
         body: JSON.stringify({ issue: payload, userId: currentUser.id })
       });
 
@@ -323,9 +407,13 @@ function AppContent() {
     if (!currentUser) return;
 
     try {
+      const storedToken = localStorage.getItem('hero_token') || '';
       const res = await fetch(`/api/issues/${issueId}/vote`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${storedToken}`
+        },
         body: JSON.stringify({ userId: currentUser.id })
       });
 
@@ -366,9 +454,13 @@ function AppContent() {
     if (!currentUser) return;
 
     try {
+      const storedToken = localStorage.getItem('hero_token') || '';
       const res = await fetch(`/api/issues/${issueId}/verify`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${storedToken}`
+        },
         body: JSON.stringify({ userId: currentUser.id })
       });
 
@@ -427,9 +519,13 @@ function AppContent() {
     };
 
     try {
+      const storedToken = localStorage.getItem('hero_token') || '';
       const res = await fetch('/api/comments', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${storedToken}`
+        },
         body: JSON.stringify({ comment: payload })
       });
 
@@ -449,9 +545,13 @@ function AppContent() {
 
   const handleUpdateStatus = async (issueId: string, payload: any) => {
     try {
+      const storedToken = localStorage.getItem('hero_token') || '';
       const res = await fetch(`/api/issues/${issueId}/status`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${storedToken}`
+        },
         body: JSON.stringify(payload)
       });
 
@@ -489,7 +589,13 @@ function AppContent() {
 
   const handleModerateIssue = async (issueId: string) => {
     try {
-      const res = await fetch(`/api/issues/${issueId}/delete`, { method: 'POST' });
+      const storedToken = localStorage.getItem('hero_token') || '';
+      const res = await fetch(`/api/issues/${issueId}/delete`, { 
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${storedToken}`
+        }
+      });
       if (res.ok) {
         const data = await res.json();
         setIssues(data.issues);
@@ -501,9 +607,13 @@ function AppContent() {
 
   const handleModifyRole = async (userId: string, newRole: any) => {
     try {
+      const storedToken = localStorage.getItem('hero_token') || '';
       const res = await fetch(`/api/users/${userId}/role`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${storedToken}`
+        },
         body: JSON.stringify({ role: newRole })
       });
 
@@ -595,6 +705,7 @@ function AppContent() {
                 notifications={notifications}
                 onNavigate={handleNavigate}
                 onClearNotifications={() => setNotifications([])}
+                onRefresh={handleRefreshData}
               />
             ) : (
               <Navigate to="/" replace />

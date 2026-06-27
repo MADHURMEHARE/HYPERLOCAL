@@ -4,6 +4,7 @@ import bcrypt from 'bcryptjs';
 import { UserRepository } from '../repositories/UserRepository';
 import { JWT_SECRET, DEFAULT_PASSWORD_HASH } from '../../server/db';
 import { UserRole } from '../../src/types';
+import { EmailService } from '../../server/services/EmailService';
 
 export class AuthController {
   static async register(req: Request, res: Response) {
@@ -22,6 +23,11 @@ export class AuthController {
       const passwordHash = bcrypt.hashSync(password, 10);
       const newUser = await UserRepository.create(name, email, passwordHash, role as UserRole, ward);
       const token = jwt.sign({ id: newUser.id, email: newUser.email, role: newUser.role }, JWT_SECRET, { expiresIn: '24h' });
+
+      // Send welcome email asynchronously using Resend SMTP
+      EmailService.sendWelcomeEmail(newUser.email, newUser.name).catch((err) => {
+        console.error('Failed to send welcome email:', err);
+      });
 
       return res.status(201).json({ success: true, user: newUser, token });
     } catch (err: any) {
@@ -50,6 +56,12 @@ export class AuthController {
         const name = email.split('@')[0].replace(/[^a-zA-Z]/g, ' ') || 'Anonymous Hero';
         const newUser = await UserRepository.create(name, email, DEFAULT_PASSWORD_HASH, (role as UserRole) || 'citizen', 'Ward 3 - Mission');
         const token = jwt.sign({ id: newUser.id, email: newUser.email, role: newUser.role }, JWT_SECRET, { expiresIn: '24h' });
+
+        // Send welcome email asynchronously
+        EmailService.sendWelcomeEmail(newUser.email, newUser.name).catch((err) => {
+          console.error('Failed to send welcome email:', err);
+        });
+
         return res.json({ success: true, user: newUser, token });
       }
 
@@ -64,6 +76,7 @@ export class AuthController {
       }
 
       const token = jwt.sign({ id: user.id, email: user.email, role: user.role }, JWT_SECRET, { expiresIn: '24h' });
+
       return res.json({ success: true, user, token });
     } catch (err: any) {
       return res.status(500).json({ success: false, error: err.message || 'Server error during login.' });

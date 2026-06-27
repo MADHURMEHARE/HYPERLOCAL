@@ -37,8 +37,8 @@ export class UserRepository {
     };
   }
 
-  static async create(name: string, email: string, passwordHash: string, role: UserRole = 'citizen', ward?: string): Promise<User> {
-    const newId = 'user_' + Math.random().toString(36).substring(2, 11);
+  static async create(name: string, email: string, passwordHash: string, role: UserRole = 'citizen', ward?: string, customId?: string): Promise<User> {
+    const newId = customId || ('user_' + Math.random().toString(36).substring(2, 11));
     const user = await prisma.user.create({
       data: {
         id: newId,

@@ -2,6 +2,7 @@ import { prisma } from '../../prisma/prisma-client';
 import { Issue, IssuePriority, IssueStatus, ProgressUpdate, IssueCategory } from '../../src/types';
 import { UserRepository } from './UserRepository';
 import { NotificationRepository } from './NotificationRepository';
+import { EmailService } from '../../server/services/EmailService';
 
 export function getAutoAllotedVendor(category: string): { id: string; name: string } | undefined {
   if (category === 'Road Damage' || category === 'Broken Streetlight' || category === 'Fallen Tree') {
@@ -203,9 +204,21 @@ export class IssueRepository {
       }
     });
 
-    // Award points to creator
+    // Award points to creator and send email notification
     if (createdBy) {
       await UserRepository.addPoints(createdBy, 10); // Report Issue = 10 pts
+      UserRepository.findById(createdBy).then((creator) => {
+        if (creator && creator.email) {
+          EmailService.sendIssueReportedEmail(
+            creator.email,
+            creator.name,
+            title,
+            category,
+            priority,
+            location.address || 'Unknown Address'
+          ).catch((err) => console.error('Failed to send issue reported email:', err));
+        }
+      }).catch((err) => console.error('Failed to find creator for email notification:', err));
     }
 
     if (autoVendor) {
@@ -347,6 +360,19 @@ export class IssueRepository {
         'success', 
         issue.id
       );
+
+      // Send verification status change email asynchronously
+      const creator = await UserRepository.findById(issue.createdBy);
+      if (creator && creator.email) {
+        EmailService.sendIssueStatusUpdateEmail(
+          creator.email,
+          creator.name,
+          issue.title,
+          issue.status,
+          newStatus,
+          'Issue community verification score reached threshold. Promoted to Verified state.'
+        ).catch((err) => console.error('Failed to send status update email:', err));
+      }
     }
 
     await prisma.issue.update({
@@ -490,6 +516,19 @@ export class IssueRepository {
         'info',
         issue.id
       );
+    }
+
+    // Send status update email asynchronously
+    const creator = await UserRepository.findById(issue.createdBy);
+    if (creator && creator.email) {
+      EmailService.sendIssueStatusUpdateEmail(
+        creator.email,
+        creator.name,
+        issue.title,
+        issue.status,
+        status,
+        note || (status === 'Resolved' ? `The issue has been marked as resolved by ${officerName || 'municipal staff'}.` : `The issue status is now ${status}.`)
+      ).catch((err) => console.error('Failed to send status update email:', err));
     }
 
     return this.findById(issueId);

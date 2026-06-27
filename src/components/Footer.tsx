@@ -38,11 +38,11 @@ export default function Footer({ onNavigate, currentUser }: FooterProps) {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer id="municipal_footer" className="bg-slate-900 text-slate-300 dark:bg-slate-950 border-t border-slate-800 transition-colors duration-300">
+    <footer id="municipal_footer" className="bg-slate-50 text-slate-600 dark:bg-[#090D16] dark:text-slate-400 border-t border-slate-200 dark:border-blue-900/30 transition-colors duration-300">
       
       {/* Upper footer grid containing categories and subscription */}
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-12 pb-12 border-b border-slate-800">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-8 lg:gap-12 pb-12 border-b border-slate-200 dark:border-slate-800/60">
           
           {/* Brand Panel */}
           <div className="lg:col-span-4 space-y-4">
@@ -53,33 +53,33 @@ export default function Footer({ onNavigate, currentUser }: FooterProps) {
               <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-600 text-white shadow-md shadow-blue-500/20">
                 <Shield className="h-5 w-5" />
               </div>
-              <span className="font-display text-base font-extrabold tracking-tight text-white">
-                Community<span className="text-blue-400">Hero</span>
+              <span className="font-display text-base font-extrabold tracking-tight text-slate-900 dark:text-white">
+                Community<span className="text-blue-600 dark:text-blue-400">Hero</span>
               </span>
             </div>
             
-            <p className="font-sans text-xs.5 text-slate-400 leading-relaxed max-w-sm">
+            <p className="font-sans text-xs.5 text-slate-500 dark:text-slate-400 leading-relaxed max-w-sm">
               An AI-Powered Hyperlocal Problem Solver enabling citizens to report, track, verify, and resolve community issues in collaboration with local municipal departments.
             </p>
 
             <div className="flex items-center space-x-3 pt-2">
               <a 
                 href="#github" 
-                className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-200/65 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
                 aria-label="GitHub Repository"
               >
                 <Github className="h-4 w-4" />
               </a>
               <a 
                 href="#twitter" 
-                className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-200/65 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
                 aria-label="Twitter Profile"
               >
                 <Twitter className="h-4 w-4" />
               </a>
               <a 
                 href="#web" 
-                className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
+                className="flex h-8 w-8 items-center justify-center rounded-lg bg-slate-200/65 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white transition-colors"
                 aria-label="Municipal Website"
               >
                 <Globe className="h-4 w-4" />
@@ -89,14 +89,14 @@ export default function Footer({ onNavigate, currentUser }: FooterProps) {
 
           {/* Quick Civic Services Navigation */}
           <div className="lg:col-span-2 space-y-3 text-left">
-            <h4 className="font-display text-xs.5 font-extrabold uppercase tracking-widest text-slate-400">
+            <h4 className="font-display text-xs.5 font-extrabold uppercase tracking-widest text-slate-500 dark:text-slate-400">
               Civic Services
             </h4>
             <ul className="space-y-2 text-xs.5 font-bold font-sans">
               <li>
                 <button 
                   onClick={() => onNavigate('map')} 
-                  className="text-slate-400 hover:text-white transition-colors cursor-pointer block"
+                  className="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors cursor-pointer block"
                 >
                   Explore Heatmap
                 </button>
@@ -104,7 +104,7 @@ export default function Footer({ onNavigate, currentUser }: FooterProps) {
               <li>
                 <button 
                   onClick={() => onNavigate('report')} 
-                  className="text-slate-400 hover:text-white transition-colors cursor-pointer block"
+                  className="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors cursor-pointer block"
                 >
                   AI Photo Shutter
                 </button>
@@ -112,7 +112,7 @@ export default function Footer({ onNavigate, currentUser }: FooterProps) {
               <li>
                 <button 
                   onClick={() => onNavigate('leaderboard')} 
-                  className="text-slate-400 hover:text-white transition-colors cursor-pointer block"
+                  className="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors cursor-pointer block"
                 >
                   Civic Standings
                 </button>
@@ -120,7 +120,7 @@ export default function Footer({ onNavigate, currentUser }: FooterProps) {
               <li>
                 <button 
                   onClick={() => onNavigate('analytics')} 
-                  className="text-slate-400 hover:text-white transition-colors cursor-pointer block"
+                  className="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors cursor-pointer block"
                 >
                   Analytics Console
                 </button>
@@ -130,39 +130,39 @@ export default function Footer({ onNavigate, currentUser }: FooterProps) {
 
           {/* Resources Column */}
           <div className="lg:col-span-2 space-y-3 text-left">
-            <h4 className="font-display text-xs.5 font-extrabold uppercase tracking-widest text-slate-400">
+            <h4 className="font-display text-xs.5 font-extrabold uppercase tracking-widest text-slate-500 dark:text-slate-400">
               Resources
             </h4>
             <ul className="space-y-2 text-xs.5 font-bold font-sans">
               <li>
                 <button 
                   onClick={() => onNavigate('assistant')} 
-                  className="text-slate-400 hover:text-white transition-colors cursor-pointer block flex items-center gap-1.5"
+                  className="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors cursor-pointer block flex items-center gap-1.5"
                 >
-                  <MessageSquare className="h-3.5 w-3.5 text-blue-400" />
+                  <MessageSquare className="h-3.5 w-3.5 text-blue-500 dark:text-blue-400" />
                   AI Assistant Chat
                 </button>
               </li>
               <li>
                 <button 
                   onClick={() => onNavigate('about')} 
-                  className="text-slate-400 hover:text-white transition-colors cursor-pointer block text-left"
+                  className="text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors cursor-pointer block text-left"
                 >
                   About CommunityHero
                 </button>
               </li>
               <li>
-                <span className="text-slate-500 cursor-default block">
+                <span className="text-slate-400 dark:text-slate-500 cursor-default block">
                   Municipal API docs
                 </span>
               </li>
               <li>
-                <span className="text-slate-500 cursor-default block">
+                <span className="text-slate-400 dark:text-slate-500 cursor-default block">
                   Service Level SLAs
                 </span>
               </li>
               <li>
-                <span className="text-slate-500 cursor-default block">
+                <span className="text-slate-400 dark:text-slate-500 cursor-default block">
                   Transparency Reports
                 </span>
               </li>
@@ -171,10 +171,10 @@ export default function Footer({ onNavigate, currentUser }: FooterProps) {
 
           {/* Newsletter Form */}
           <div className="lg:col-span-4 space-y-3.5">
-            <h4 className="font-display text-xs.5 font-extrabold uppercase tracking-widest text-slate-400">
+            <h4 className="font-display text-xs.5 font-extrabold uppercase tracking-widest text-slate-500 dark:text-slate-400">
               Municipal Dispatch Alerts
             </h4>
-            <p className="font-sans text-xs.5 text-slate-400 leading-relaxed">
+            <p className="font-sans text-xs.5 text-slate-500 dark:text-slate-400 leading-relaxed">
               Subscribe to get immediate alert logs regarding resolved work orders, severe hazards, and active road maintenance crews in your neighborhood ward.
             </p>
 
@@ -186,7 +186,7 @@ export default function Footer({ onNavigate, currentUser }: FooterProps) {
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="Enter neighborhood email"
                   required
-                  className="flex-1 rounded-xl bg-slate-800 border border-slate-750 focus:border-blue-500 py-2.5 px-3.5 text-xs text-white placeholder-slate-500 outline-none transition-all font-sans"
+                  className="flex-1 rounded-xl bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-750 focus:border-blue-500 py-2.5 px-3.5 text-xs text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none transition-all font-sans"
                 />
                 <button 
                   type="submit"
@@ -208,17 +208,17 @@ export default function Footer({ onNavigate, currentUser }: FooterProps) {
         {/* Lower footer with copyright and citizen-care badge */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pt-8">
           <div className="text-left space-y-1">
-            <p className="font-sans text-xs text-slate-400">
+            <p className="font-sans text-xs text-slate-500 dark:text-slate-400">
               © {currentYear} Community Hero Inc. Public Works Transparency & Civic Engagement. All rights reserved.
             </p>
-            <p className="font-mono text-[9px] text-slate-500 uppercase tracking-wider">
+            <p className="font-mono text-[9px] text-slate-400 dark:text-slate-500 uppercase tracking-wider">
               Secure TLS Enforced • Powered by Gemini Vision Models
             </p>
           </div>
 
-          <div className="flex items-center space-x-1.5 self-start sm:self-center bg-slate-850 px-3 py-1.5 rounded-full border border-slate-800">
+          <div className="flex items-center space-x-1.5 self-start sm:self-center bg-slate-100 dark:bg-slate-850 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-800">
             <Heart className="h-3 w-3 text-rose-500 fill-rose-500 animate-pulse" />
-            <span className="font-sans text-[10px] font-bold text-slate-400">
+            <span className="font-sans text-[10px] font-bold text-slate-600 dark:text-slate-400">
               Made with care for cleaner cities
             </span>
           </div>

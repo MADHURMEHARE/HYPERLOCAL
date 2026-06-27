@@ -390,37 +390,26 @@ These help the city budget pre-emptively before major ruptures happen!`;
 
   static async getLeaderboard(req: Request, res: Response) {
     try {
-      const leaderboard = await getLeaderboardHelper();
+      const allIssues = await IssueRepository.getAll();
+      const allUsers = await UserRepository.getAll();
+
+      const leaderboard = allUsers
+        .map(u => ({
+          id: u.id,
+          name: u.name,
+          points: u.points || 0,
+          badges: u.badges || [],
+          avatar: u.avatar,
+          ward: u.ward,
+          role: u.role,
+          reportsCount: allIssues.filter(i => i.createdBy === u.id).length,
+          verificationsCount: allIssues.filter(i => i.verifiedBy.includes(u.id)).length
+        }))
+        .sort((a, b) => b.points - a.points);
+
       return res.json(leaderboard);
     } catch (error: any) {
       return res.status(500).json({ error: error.message || 'Failed to retrieve leaderboard.' });
     }
   }
-}
-
-export async function getLeaderboardHelper() {
-  const allIssues = await IssueRepository.getAll();
-  const allUsers = await UserRepository.getAll();
-
-  const leaderboard = allUsers
-    .map(u => ({
-      userId: u.id,
-      id: u.id,
-      name: u.name,
-      points: u.points || 0,
-      badgesCount: u.badges ? u.badges.length : 0,
-      rank: 1,
-      avatar: u.avatar,
-      ward: u.ward,
-      role: u.role,
-      reportsCount: allIssues.filter(i => i.createdBy === u.id).length,
-      verificationsCount: allIssues.filter(i => i.verifiedBy.includes(u.id)).length
-    }))
-    .sort((a, b) => b.points - a.points);
-
-  leaderboard.forEach((item, index) => {
-    item.rank = index + 1;
-  });
-
-  return leaderboard;
 }

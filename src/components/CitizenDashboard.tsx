@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Award, 
   MapPin, 
@@ -18,7 +18,8 @@ import {
   HelpCircle,
   ThumbsUp,
   Flame,
-  ArrowUpRight
+  ArrowUpRight,
+  RefreshCw
 } from 'lucide-react';
 import { User, Issue, Notification } from '../types';
 
@@ -28,6 +29,7 @@ interface CitizenDashboardProps {
   notifications: Notification[];
   onNavigate: (view: string, issueId?: string) => void;
   onClearNotifications: () => void;
+  onRefresh?: () => Promise<void>;
 }
 
 export default function CitizenDashboard({ 
@@ -35,8 +37,23 @@ export default function CitizenDashboard({
   issues, 
   notifications, 
   onNavigate,
-  onClearNotifications
+  onClearNotifications,
+  onRefresh
 }: CitizenDashboardProps) {
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleManualRefresh = async () => {
+    if (!onRefresh) return;
+    setIsRefreshing(true);
+    try {
+      await onRefresh();
+    } catch (e) {
+      console.error('Manual sync failed:', e);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+
   const userIssues = issues.filter(i => i.createdBy === user.id);
   const resolvedCount = userIssues.filter(i => i.status === 'Resolved').length;
   const inProgressCount = userIssues.filter(i => i.status === 'In Progress').length;
@@ -87,9 +104,21 @@ export default function CitizenDashboard({
           </div>
         </div>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
+          {onRefresh && (
+            <button
+              onClick={handleManualRefresh}
+              disabled={isRefreshing}
+              id="sync-ledger-btn"
+              className="flex items-center justify-center rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-850 text-slate-700 dark:text-slate-300 font-semibold text-xs px-4 py-3 shadow-xs transition-all cursor-pointer disabled:opacity-50"
+            >
+              <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${isRefreshing ? 'animate-spin' : ''}`} />
+              Sync Ledger
+            </button>
+          )}
           <button
             onClick={() => onNavigate('report')}
+            id="report-hazard-btn"
             className="flex items-center justify-center rounded-xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-semibold text-xs px-5 py-3 shadow-md shadow-blue-500/10 transition-all cursor-pointer"
           >
             Report New Hazard

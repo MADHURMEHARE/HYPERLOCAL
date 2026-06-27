@@ -5,6 +5,7 @@ import notificationRoutes from './notificationRoutes';
 import aiRoutes from './aiRoutes';
 import { AiController } from '../controllers/AiController';
 import { IssueController } from '../controllers/IssueController';
+import { authMiddleware } from '../middlewares/authMiddleware';
 
 const apiRouter = Router();
 
@@ -19,9 +20,9 @@ apiRouter.get('/predictions', AiController.getPredictions);
 apiRouter.get('/leaderboard', AiController.getLeaderboard);
 
 apiRouter.get('/users', IssueController.getUsers);
-apiRouter.post('/users/:id/role', IssueController.changeUserRole);
+apiRouter.post('/users/:id/role', authMiddleware, IssueController.changeUserRole);
 
 apiRouter.get('/comments', IssueController.getComments);
-apiRouter.post('/comments', IssueController.createCommentDirect);
+apiRouter.post('/comments', authMiddleware, IssueController.createCommentDirect);
 
 export default apiRouter;
