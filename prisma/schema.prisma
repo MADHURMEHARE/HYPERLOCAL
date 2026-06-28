@@ -78,3 +78,35 @@ model Notification {
   issueId   String?
   createdAt DateTime @default(now())
 }
+
+model AIIncident {
+  id             String   @id @default(uuid())
+  title          String
+  description    String
+  category       String
+  severity       String
+  confidence     Int
+  latitude       Float
+  longitude      Float
+  location       String
+  city           String?
+  state          String?
+  country        String?
+  sourceName     String
+  sourceUrl      String
+  imageUrl       String?
+  status         String   @default("Detected")
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  verified       Boolean  @default(false)
+  duplicateScore Float    @default(0)
+}
+
+model NewsSource {
+  id          String    @id @default(uuid())
+  name        String
+  rssUrl      String
+  website     String?
+  enabled     Boolean   @default(true)
+  lastFetched DateTime?
+}

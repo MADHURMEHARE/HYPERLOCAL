@@ -21,6 +21,15 @@ import OfficerDashboard from './components/OfficerDashboard';
 import AdminDashboard from './components/AdminDashboard';
 import AiAssistant from './components/AiAssistant';
 import VendorDashboard from './components/VendorDashboard';
+
+// AI Intelligence Module Pages
+import AIDashboard from './pages/AI/AIDashboard';
+import NewsMonitor from './pages/AI/NewsMonitor';
+import AIIncidentList from './pages/AI/AIIncidentList';
+import HeatMap from './pages/AI/HeatMap';
+import DetectionHistory from './pages/AI/DetectionHistory';
+import NewsSources from './pages/AI/NewsSources';
+
 import { User, Issue, Comment, PredictiveHotspot, LeaderboardEntry, Notification as AppNotification } from './types';
 
 // Root level component that sets up standard react-router-dom context
@@ -60,7 +69,57 @@ function AppContent() {
   }, [theme]);
 
   // Load Initial Data from Full-Stack Express Server or Fallbacks
-  
+  useEffect(() => {
+    const fetchData = async () => {
+      let activeUser: User | null = null;
+      const storedToken = localStorage.getItem('hero_token');
+
+      if (storedToken) {
+        try {
+          const verifyRes = await fetch('/api/auth/me', {
+            headers: { 'Authorization': `Bearer ${storedToken}` }
+          });
+          if (verifyRes.ok) {
+            const verifyData = await verifyRes.json();
+            if (verifyData.success) {
+              activeUser = verifyData.user;
+              setCurrentUser(verifyData.user);
+            }
+          } else {
+            localStorage.removeItem('hero_token');
+          }
+        } catch (e) {
+          console.warn("Express JWT verification failed, continuing in guest mode.", e);
+        }
+      }
+
+      try {
+        const headers: Record<string, string> = {};
+        if (storedToken) {
+          headers['Authorization'] = `Bearer ${storedToken}`;
+        }
+
+        const [issuesRes, commentsRes, predictionsRes, usersRes, leaderRes, notifyRes] = await Promise.all([
+          fetch('/api/issues', { headers }),
+          fetch('/api/comments', { headers }),
+          fetch('/api/predictions', { headers }),
+          fetch('/api/users', { headers }),
+          fetch('/api/leaderboard', { headers }),
+          fetch(activeUser ? `/api/notifications/${activeUser.id}` : '/api/notifications', { headers })
+        ]);
+
+        if (issuesRes.ok) setIssues(await issuesRes.json());
+        if (commentsRes.ok) setComments(await commentsRes.json());
+        if (predictionsRes.ok) setPredictions(await predictionsRes.json());
+        if (usersRes.ok) setUsersList(await usersRes.json());
+        if (leaderRes.ok) setLeaderboard(await leaderRes.json());
+        if (notifyRes.ok) setNotifications(await notifyRes.json());
+      } catch (err) {
+        console.warn("Express endpoint connections unavailable. Bootstrapping client state.", err);
+      }
+    };
+    fetchData();
+  }, []);
 
   // Shared function to manually or automatically synchronize state with municipal ledger
   const handleRefreshData = async () => {
@@ -150,6 +209,12 @@ function AppContent() {
     if (pathname === '/leaderboard') return 'leaderboard';
     if (pathname === '/analytics') return 'analytics';
     if (pathname === '/assistant') return 'assistant';
+    if (pathname === '/ai/dashboard') return 'ai-dashboard';
+    if (pathname === '/ai/news-monitor') return 'ai-news-monitor';
+    if (pathname === '/ai/incidents') return 'ai-incidents';
+    if (pathname === '/ai/heatmap') return 'ai-heatmap';
+    if (pathname === '/ai/history') return 'ai-history';
+    if (pathname === '/ai/sources') return 'ai-sources';
     return 'landing';
   };
 
@@ -222,6 +287,12 @@ function AppContent() {
       else if (view === 'leaderboard') navigate('/leaderboard');
       else if (view === 'analytics') navigate('/analytics');
       else if (view === 'assistant') navigate('/assistant');
+      else if (view === 'ai-dashboard') navigate('/ai/dashboard');
+      else if (view === 'ai-news-monitor') navigate('/ai/news-monitor');
+      else if (view === 'ai-incidents') navigate('/ai/incidents');
+      else if (view === 'ai-heatmap') navigate('/ai/heatmap');
+      else if (view === 'ai-history') navigate('/ai/history');
+      else if (view === 'ai-sources') navigate('/ai/sources');
     }
   };
 
@@ -782,6 +853,50 @@ function AppContent() {
                 onModerateIssue={handleModerateIssue}
                 onModifyRole={handleModifyRole}
               />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          } />
+
+          {/* AI Intelligence Routes */}
+          <Route path="/ai/dashboard" element={
+            currentUser && (currentUser.role === 'officer' || currentUser.role === 'admin') ? (
+              <AIDashboard onNavigate={handleNavigate} />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          } />
+          <Route path="/ai/news-monitor" element={
+            currentUser && (currentUser.role === 'officer' || currentUser.role === 'admin') ? (
+              <NewsMonitor />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          } />
+          <Route path="/ai/incidents" element={
+            currentUser && (currentUser.role === 'officer' || currentUser.role === 'admin') ? (
+              <AIIncidentList />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          } />
+          <Route path="/ai/heatmap" element={
+            currentUser && (currentUser.role === 'officer' || currentUser.role === 'admin') ? (
+              <HeatMap />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          } />
+          <Route path="/ai/history" element={
+            currentUser && (currentUser.role === 'officer' || currentUser.role === 'admin') ? (
+              <DetectionHistory />
+            ) : (
+              <Navigate to="/" replace />
+            )
+          } />
+          <Route path="/ai/sources" element={
+            currentUser && (currentUser.role === 'officer' || currentUser.role === 'admin') ? (
+              <NewsSources />
             ) : (
               <Navigate to="/" replace />
             )

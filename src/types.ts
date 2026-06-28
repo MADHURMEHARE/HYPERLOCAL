@@ -120,3 +120,35 @@ export interface ChatMessage {
   content: string;
   createdAt: string;
 }
+
+export interface AIIncident {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  severity: string;
+  confidence: number;
+  latitude: number;
+  longitude: number;
+  location: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  sourceName: string;
+  sourceUrl: string;
+  imageUrl?: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+  verified: boolean;
+  duplicateScore: number;
+}
+
+export interface NewsSource {
+  id: string;
+  name: string;
+  rssUrl: string;
+  website?: string;
+  enabled: boolean;
+  lastFetched?: string;
+}

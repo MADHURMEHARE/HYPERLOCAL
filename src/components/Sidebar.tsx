@@ -25,7 +25,10 @@ import {
   BarChart3,
   Bot,
   Briefcase,
-  Search
+  Search,
+  Activity,
+  Clock,
+  Rss
 } from 'lucide-react';
 import { User, Notification } from '../types';
 
@@ -210,6 +213,51 @@ export default function Sidebar({
             );
           })}
         </nav>
+
+        {/* AI Intelligence Submenu Section for Officers & Admins */}
+        {(user.role === 'officer' || user.role === 'admin') && (
+          <div className="space-y-2 pt-3 border-t border-slate-100 dark:border-blue-900/10 text-left">
+            <span className="block px-4 text-[9px] font-extrabold uppercase tracking-widest text-slate-400 dark:text-cyan-500/50">
+              🤖 AI Intelligence
+            </span>
+            <nav className="space-y-1">
+              {[
+                { label: 'AI Dashboard', view: 'ai-dashboard', icon: LayoutDashboard },
+                { label: 'Live News Monitor', view: 'ai-news-monitor', icon: Activity },
+                { label: 'AI Detected Incidents', view: 'ai-incidents', icon: Shield },
+                { label: 'Disaster Heatmap', view: 'ai-heatmap', icon: Map },
+                { label: 'Detection History', view: 'ai-history', icon: Clock },
+                { label: 'News Sources', view: 'ai-sources', icon: Rss },
+              ].map((subItem) => {
+                const SubIcon = subItem.icon;
+                const isSubActive = currentView === subItem.view;
+                return (
+                  <button
+                    key={subItem.view}
+                    onClick={() => {
+                      onNavigate(subItem.view);
+                      setShowMobileSidebar(false);
+                    }}
+                    className={`w-full relative flex items-center space-x-3 rounded-xl px-4 py-2 font-sans text-xs font-bold transition-all duration-200 cursor-pointer text-left ${
+                      isSubActive
+                        ? 'bg-blue-50/70 border border-blue-200/50 text-blue-600 dark:bg-cyan-955/20 dark:border-cyan-500/25 dark:text-cyan-300 dark:shadow-[0_0_12px_rgba(34,211,238,0.12)]'
+                        : 'text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-200 hover:bg-slate-50/50 dark:hover:bg-slate-850/20 border border-transparent'
+                    }`}
+                  >
+                    <SubIcon className={`h-4 w-4 ${isSubActive ? 'text-blue-600 dark:text-cyan-400' : 'text-slate-400'}`} />
+                    <span className="flex-1">{subItem.label}</span>
+                    {isSubActive && (
+                      <motion.span 
+                        layoutId="activeSubIndicator"
+                        className="absolute right-3 w-1.5 h-1.5 rounded-full bg-blue-600 dark:bg-cyan-400 shadow-[0_0_8px_rgba(34,211,238,0.8)]" 
+                      />
+                    )}
+                  </button>
+                );
+              })}
+            </nav>
+          </div>
+        )}
       </div>
 
       {/* Footer Area with Utilities */}
